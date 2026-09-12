@@ -105,3 +105,26 @@ def test_validacion_rechaza_datos_malos(client):
 def test_no_regresa_entregado_a_espera(client):
     r = client.post("/api/siguiente-estado", json={"estado":"Entregado"})
     assert r.status_code == 400
+
+
+@pytest.mark.parametrize("ruta", ["/api/validar-ingreso", "/api/siguiente-estado"])
+@pytest.mark.parametrize("cuerpo", ['[1]', '"texto"', '42', 'true', 'null', '[]', '{'])
+def test_api_rechaza_cuerpos_que_no_son_objetos(client, ruta, cuerpo):
+    r = client.post(ruta, data=cuerpo, content_type="application/json")
+    assert r.status_code == 400
+    assert r.json["ok"] is False
+
+
+@pytest.mark.parametrize("campo", ["servicio", "tipo", "telefono"])
+@pytest.mark.parametrize("valor", [[], {}, False, 0])
+def test_ingreso_rechaza_tipos_invalidos_sin_error_interno(client, campo, valor):
+    data = {"nombre": "Cliente QA", "placa": "ABC123", "servicio": "Express"}
+    data[campo] = valor
+    r = client.post("/api/validar-ingreso", json=data)
+    assert r.status_code == 400
+    assert campo in r.json["errores"]
+
+
+@pytest.mark.parametrize("servicio,tipo", [([], "Auto"), ("Express", {})])
+def test_calculo_rechaza_catalogos_con_tipos_invalidos(servicio, tipo):
+    assert calcular_precio(servicio, tipo) is None

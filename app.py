@@ -22,13 +22,15 @@ def normalizar_placa(valor):
     return re.sub(r"[^A-Z0-9-]", "", valor.upper())[:12]
 
 def validar_telefono(valor):
-    if not valor:
+    if valor is None or valor == "":
         return True
     if not isinstance(valor, str):
         return False
     return len(re.sub(r"\D", "", valor)) == 10
 
 def calcular_precio(servicio, tipo="Auto", frecuente=False):
+    if not isinstance(servicio, str) or not isinstance(tipo, str):
+        return None
     if servicio not in SERVICIOS or tipo not in TIPOS_VEHICULO:
         return None
     precio = Decimal(str(SERVICIOS[servicio]["precio"] * TIPOS_VEHICULO[tipo]))
@@ -57,12 +59,14 @@ def config():
 
 @app.post("/api/validar-ingreso")
 def validar_ingreso():
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(ok=False, errores={"json": "Se requiere un objeto JSON"}), 400
     errores = {}
     nombre_raw = data.get("nombre")
     nombre = nombre_raw.strip() if isinstance(nombre_raw, str) else ""
     placa = normalizar_placa(data.get("placa"))
-    telefono = data.get("telefono") or ""
+    telefono = data.get("telefono")
     servicio = data.get("servicio")
     tipo = data.get("tipo", "Auto")
     frecuente = data.get("frecuente", False)
@@ -75,9 +79,9 @@ def validar_ingreso():
         errores["placa"] = "Placa inválida"
     if not validar_telefono(telefono):
         errores["telefono"] = "Teléfono inválido"
-    if servicio not in SERVICIOS:
+    if not isinstance(servicio, str) or servicio not in SERVICIOS:
         errores["servicio"] = "Servicio inexistente"
-    if tipo not in TIPOS_VEHICULO:
+    if not isinstance(tipo, str) or tipo not in TIPOS_VEHICULO:
         errores["tipo"] = "Tipo de vehículo inexistente"
     if not isinstance(frecuente, bool):
         errores["frecuente"] = "El indicador frecuente debe ser booleano"
@@ -95,7 +99,9 @@ def validar_ingreso():
 
 @app.post("/api/siguiente-estado")
 def api_siguiente_estado():
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(ok=False, error="Se requiere un objeto JSON"), 400
     actual = data.get("estado")
     nuevo = siguiente_estado(actual)
     if nuevo is None:

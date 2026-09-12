@@ -37,3 +37,11 @@ Esta versión sigue siendo un prototipo QA de un solo dispositivo:
 5. Los reportes históricos, cierres de caja y métricas por responsable aún no existen como módulos persistentes.
 
 Estos puntos requieren una segunda etapa de desarrollo con base de datos y autenticación. No deben presentarse como funciones terminadas en producción.
+
+## Continuación local — 2026-09-12
+
+- Se corrigió el manejo de cuerpos JSON que no son objetos en ambos endpoints POST: ahora responden 400 en lugar de provocar un error interno.
+- Se rechazan listas y objetos en los catálogos de servicio y vehículo sin errores 500.
+- Se rechazan teléfonos con tipos inválidos, incluso valores vacíos como listas, objetos, `false` y `0`; se mantienen opcionales el campo omitido, `null` y la cadena vacía.
+- Se añadieron 28 casos de regresión: 54 pruebas aprobadas en Windows, compilación Python y `git diff --check` aprobados.
+- Se creó un entorno local `.venv` con las dependencias del repositorio. La segunda etapa con persistencia central y autenticación sigue pendiente.
