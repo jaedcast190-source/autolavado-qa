@@ -15,8 +15,12 @@ Abrir `http://127.0.0.1:5000`.
 ## Pruebas
 
 ```bash
-pytest -q
+python -m pytest -q
 ```
+
+La interfaz servida por Flask está en `templates/index.html`. Los datos de esta
+versión QA se conservan en el almacenamiento local del navegador y pueden
+respaldarse desde el botón **Respaldo**.
 
 ## Render
 

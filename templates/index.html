@@ -132,6 +132,9 @@
   .fallas.show{display:flex;}
   .chip{font-family:inherit; font-size:12px; padding:6px 12px; border-radius:20px; border:1px solid var(--gris-bd); background:#fff; cursor:pointer; color:var(--texto);}
   .chip.on{background:#FCEBEB; border-color:#E24B4A; color:#A32D2D; font-weight:500;}
+  .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 16px;}
+  .admin-item{border:1px solid var(--gris-bd);border-radius:9px;padding:11px;font-size:12px;}
+  .admin-item b{display:block;font-size:13px;margin-bottom:2px;}
   @media(max-width:820px){ .grid{grid-template-columns:1fr;} }
 </style>
 </head>
@@ -145,6 +148,7 @@
   <div style="display:flex;gap:8px;align-items:center">
     <span style="font-size:11px;padding:4px 9px;border-radius:20px;background:#EAF3DE;color:#3B6D11;font-weight:600">QA v2 · local</span>
     <button class="btn" onclick="exportarDatos()">⬇ Respaldo</button>
+    <button class="btn" id="btnAdmin" onclick="abrirAdmin()" aria-label="Abrir administración">⚙ Administrar</button>
     <button class="btn" onclick="document.getElementById('inNombre').focus()">＋ Nuevo ingreso</button>
   </div>
 </div>
@@ -355,6 +359,24 @@
   </div>
 </div>
 
+<!-- MODAL ADMINISTRACIÓN -->
+<div class="modal-bg" id="modalAdmin" onclick="cerrarAdmin(event)">
+  <div class="modal">
+    <div class="modal-h">
+      <b>⚙ Administración</b>
+      <button class="modal-x" onclick="cerrarAdmin()" aria-label="Cerrar">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--gris-tx);padding:0 18px;">Configuración operativa cargada en esta versión.</p>
+    <div class="admin-grid">
+      <div class="admin-item"><b>Servicios</b><span>3 activos</span></div>
+      <div class="admin-item"><b>Personal</b><span>4 responsables</span></div>
+      <div class="admin-item"><b>Bahías</b><span>3 operativas</span></div>
+      <div class="admin-item"><b>Respaldo</b><span>Exportación JSON</span></div>
+    </div>
+    <div class="modal-f"><button class="btn" onclick="cerrarAdmin()">Cerrar</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -387,7 +409,24 @@
   }
 
   function guardarDatos(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({folioNum:folioNum, vehiculos:vehiculos}));
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({folioNum:folioNum, vehiculos:vehiculos}));
+      return true;
+    }catch(e){
+      mostrarToast("No fue posible guardar los datos en este dispositivo");
+      return false;
+    }
+  }
+
+  function escaparHTML(valor){
+    return String(valor == null ? "" : valor)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/\"/g,"&quot;").replace(/'/g,"&#039;");
+  }
+
+  function fechaLocalISO(){
+    var d = new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   }
 
   function normalizarPlaca(v){
@@ -472,6 +511,7 @@
       folio: "CW-" + String(folioNum).padStart(4,"0"),
       hora: ahora(),
       horaCita: document.getElementById("inHora").value || "—",
+      fechaCita: document.getElementById("inFecha").value || fechaLocalISO(),
       entrega: calcularEntrega(),
       nombre: nombre.value.trim(),
       telefono: telNorm,
@@ -493,7 +533,11 @@
       historial: [{estado:"Espera", fecha:new Date().toISOString()}]
     });
 
-    guardarDatos();
+    if(!guardarDatos()){
+      vehiculos.pop();
+      folioNum--;
+      return;
+    }
 
     nombre.value = ""; placa.value = ""; tel.value = "";
     document.getElementById("inNotas").value = "";
@@ -533,6 +577,11 @@
     var html = "";
     for(var i=0;i<vehiculos.length;i++){
       var v = vehiculos[i];
+      var nombreSeguro = escaparHTML(v.nombre);
+      var subSeguro = escaparHTML(v.sub);
+      var folioSeguro = escaparHTML(v.folio);
+      var bahiaSegura = escaparHTML(v.bahia);
+      var respSeguro = escaparHTML(v.resp);
       var estrellas = "";
       if(v.calif > 0){
         estrellas = '<span class="calif-ok">';
@@ -545,10 +594,10 @@
       }
       var pagoTxt = v.pagado ? '<span class="pg pg-si">Pagado</span>' : '<span class="pg pg-no">'+v.pago+'</span>';
       html += '<div class="queue-item">'
-        + '<div class="qi-time">'+v.horaCita+'<div class="folio">'+v.folio+'</div></div>'
-        + '<div class="qi-main"><div class="name">'+v.nombre+'</div>'
-        + '<div class="sub">'+v.sub+' · $'+v.precio+(v.frec?' ★':'')+'</div>'
-        + '<div class="sub2">'+v.bahia+' · '+v.resp+' · entrega '+v.entrega+'</div></div>'
+        + '<div class="qi-time">'+escaparHTML(v.horaCita)+'<div class="folio">'+folioSeguro+'</div></div>'
+        + '<div class="qi-main"><div class="name">'+nombreSeguro+'</div>'
+        + '<div class="sub">'+subSeguro+' · $'+Number(v.precio || 0)+(v.frec?' ★':'')+'</div>'
+        + '<div class="sub2">'+bahiaSegura+' · '+respSeguro+' · entrega '+escaparHTML(v.entrega)+'</div></div>'
         + '<div class="qi-right">'
         + '<span class="tag '+TAGCLASS[v.lavado]+'">'+v.lavado+'</span>'
         + '<button class="state '+STCLASS[v.estado]+'" onclick="cambiarEstado('+i+')">'+v.estado+'</button>'
@@ -566,7 +615,11 @@
       if(vehiculos[i].estado==="Listo" || vehiculos[i].estado==="Entregado") listo++;
       if(vehiculos[i].pagado || vehiculos[i].estado==="Entregado") ingreso += Number(vehiculos[i].precio || 0);
     }
-    document.getElementById("mTotal").textContent = vehiculos.length;
+    var hoy = fechaLocalISO();
+    var totalHoy = vehiculos.filter(function(v){
+      return !v.fechaCita || v.fechaCita === hoy || v.creadoEn === "demo";
+    }).length;
+    document.getElementById("mTotal").textContent = totalHoy;
     document.getElementById("mProceso").textContent = proceso;
     document.getElementById("mListo").textContent = listo;
     document.getElementById("mIngreso").textContent = "$" + ingreso.toLocaleString();
@@ -674,6 +727,11 @@
     }
     document.getElementById("calTexto").style.color = "";
     vehiculos[calIdx].calif = calValor;
+    vehiculos[calIdx].comentarioCalif = document.getElementById("calComent").value.trim();
+    vehiculos[calIdx].fallas = Array.prototype.map.call(
+      document.querySelectorAll("#fallasBox .chip.on"), function(el){ return el.textContent; }
+    );
+    guardarDatos();
     document.getElementById("modalCal").classList.remove("show");
     render();
     mostrarToast("Calificación registrada: " + calValor + " de 5");
@@ -682,6 +740,12 @@
   function cerrarCal(e){
     if(e && e.target !== e.currentTarget) return;
     document.getElementById("modalCal").classList.remove("show");
+  }
+
+  function abrirAdmin(){ document.getElementById("modalAdmin").classList.add("show"); }
+  function cerrarAdmin(e){
+    if(e && e.target !== e.currentTarget) return;
+    document.getElementById("modalAdmin").classList.remove("show");
   }
 
   var toastTimer;
