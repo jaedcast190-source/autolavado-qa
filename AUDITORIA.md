@@ -45,3 +45,11 @@ Estos puntos requieren una segunda etapa de desarrollo con base de datos y auten
 - Se rechazan teléfonos con tipos inválidos, incluso valores vacíos como listas, objetos, `false` y `0`; se mantienen opcionales el campo omitido, `null` y la cadena vacía.
 - Se añadieron 28 casos de regresión: 54 pruebas aprobadas en Windows, compilación Python y `git diff --check` aprobados.
 - Se creó un entorno local `.venv` con las dependencias del repositorio. La segunda etapa con persistencia central y autenticación sigue pendiente.
+
+## Revisión del Pull Request — 2026-09-12
+
+- Los cambios de estado y calificaciones se revierten si falla localStorage; la calificación permanece abierta para reintentar.
+- Los botones y la confirmación de WhatsApp indican explícitamente que se trata de una simulación sin envío.
+- El encabezado presenta la fecha local actual y se escapan también los campos restaurados de pago, servicio y estado.
+- El ingreso diario excluye cobros de otras fechas. Las nuevas entregas registran fecha de cobro local; los registros antiguos usan fecha de cita como aproximación y los que no tienen fecha se excluyen, salvo los ejemplos demo.
+- Validación: 54 pruebas Python y 10 pruebas JavaScript ejecutables aprobadas. Las pruebas JavaScript usan un DOM mínimo y almacenamiento simulado, no un navegador real.

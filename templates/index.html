@@ -143,7 +143,7 @@
 <div class="topbar">
   <div class="brand">
     <div class="logo">🚿</div>
-    <div><h1>Autolavado — Panel de control<span id="fechaHoy">Sábado 29 de agosto</span></h1></div>
+    <div><h1>Autolavado — Panel de control<span id="fechaHoy"></span></h1></div>
   </div>
   <div style="display:flex;gap:8px;align-items:center">
     <span style="font-size:11px;padding:4px 9px;border-radius:20px;background:#EAF3DE;color:#3B6D11;font-weight:600">QA v2 · local</span>
@@ -277,8 +277,8 @@
         </div>
 
         <button class="btn btn-primary" style="width:100%" onclick="registrarVehiculo()">Registrar entrada</button>
-        <button class="btn btn-wa" style="width:100%; margin-top:10px;" onclick="enviarWhatsApp('confirmacion')"><span style="font-size:16px; vertical-align:-2px; margin-right:6px;">📲</span>Enviar confirmación por WhatsApp</button>
-        <button class="btn btn-wa-out" style="width:100%; margin-top:8px;" onclick="enviarWhatsApp('recordatorio')"><span style="font-size:16px; vertical-align:-2px; margin-right:6px;">🔔</span>Enviar recordatorio (1 día antes)</button>
+        <button class="btn btn-wa" style="width:100%; margin-top:10px;" onclick="enviarWhatsApp('confirmacion')"><span style="font-size:16px; vertical-align:-2px; margin-right:6px;">📲</span>Simular confirmación por WhatsApp</button>
+        <button class="btn btn-wa-out" style="width:100%; margin-top:8px;" onclick="enviarWhatsApp('recordatorio')"><span style="font-size:16px; vertical-align:-2px; margin-right:6px;">🔔</span>Simular recordatorio (1 día antes)</button>
       </div>
     </div>
 
@@ -310,7 +310,7 @@
     </div>
     <div class="modal-f">
       <button class="btn" onclick="cerrarWA()">Cerrar</button>
-      <button class="btn btn-wa" onclick="confirmarEnvioWA()">Marcar como enviado</button>
+      <button class="btn btn-wa" onclick="confirmarEnvioWA()">Finalizar simulación</button>
     </div>
   </div>
 </div>
@@ -553,6 +553,7 @@
   }
 
   function cambiarEstado(i){
+    var anterior = JSON.parse(JSON.stringify(vehiculos[i]));
     var actual = vehiculos[i].estado;
     var idx = ESTADOS.indexOf(actual);
     if(idx < 0 || idx >= ESTADOS.length - 1){
@@ -562,8 +563,14 @@
     vehiculos[i].estado = ESTADOS[idx+1];
     if(!vehiculos[i].historial) vehiculos[i].historial = [];
     vehiculos[i].historial.push({estado:vehiculos[i].estado, fecha:new Date().toISOString()});
-    if(vehiculos[i].estado === "Entregado") vehiculos[i].pagado = true;
-    guardarDatos();
+    if(vehiculos[i].estado === "Entregado"){
+      if(!vehiculos[i].pagado) vehiculos[i].fechaPago = fechaLocalISO();
+      vehiculos[i].pagado = true;
+    }
+    if(!guardarDatos()){
+      vehiculos[i] = anterior;
+      return;
+    }
     render();
   }
 
@@ -592,15 +599,15 @@
       } else {
         estrellas = '<span class="calif-na">—</span>';
       }
-      var pagoTxt = v.pagado ? '<span class="pg pg-si">Pagado</span>' : '<span class="pg pg-no">'+v.pago+'</span>';
+      var pagoTxt = v.pagado ? '<span class="pg pg-si">Pagado</span>' : '<span class="pg pg-no">'+escaparHTML(v.pago)+'</span>';
       html += '<div class="queue-item">'
         + '<div class="qi-time">'+escaparHTML(v.horaCita)+'<div class="folio">'+folioSeguro+'</div></div>'
         + '<div class="qi-main"><div class="name">'+nombreSeguro+'</div>'
         + '<div class="sub">'+subSeguro+' · $'+Number(v.precio || 0)+(v.frec?' ★':'')+'</div>'
         + '<div class="sub2">'+bahiaSegura+' · '+respSeguro+' · entrega '+escaparHTML(v.entrega)+'</div></div>'
         + '<div class="qi-right">'
-        + '<span class="tag '+TAGCLASS[v.lavado]+'">'+v.lavado+'</span>'
-        + '<button class="state '+STCLASS[v.estado]+'" onclick="cambiarEstado('+i+')">'+v.estado+'</button>'
+        + '<span class="tag '+escaparHTML(TAGCLASS[v.lavado])+'">'+escaparHTML(v.lavado)+'</span>'
+        + '<button class="state '+escaparHTML(STCLASS[v.estado])+'" onclick="cambiarEstado('+i+')">'+escaparHTML(v.estado)+'</button>'
         + '<div class="qi-meta">'+pagoTxt+' '+estrellas+'</div>'
         + '</div></div>';
     }
@@ -610,12 +617,17 @@
 
   function actualizarMetricas(){
     var proceso=0, listo=0, ingreso=0;
+    var hoy = fechaLocalISO();
     for(var i=0;i<vehiculos.length;i++){
       if(vehiculos[i].estado==="En proceso") proceso++;
       if(vehiculos[i].estado==="Listo" || vehiculos[i].estado==="Entregado") listo++;
-      if(vehiculos[i].pagado || vehiculos[i].estado==="Entregado") ingreso += Number(vehiculos[i].precio || 0);
+      var v = vehiculos[i];
+      // Registros anteriores sin fecha de cobro usan la fecha de cita como aproximación.
+      var fechaPago = v.fechaPago || v.fechaCita;
+      if((v.pagado || v.estado==="Entregado") && (fechaPago === hoy || v.creadoEn === "demo")){
+        ingreso += Number(v.precio || 0);
+      }
     }
-    var hoy = fechaLocalISO();
     var totalHoy = vehiculos.filter(function(v){
       return !v.fechaCita || v.fechaCita === hoy || v.creadoEn === "demo";
     }).length;
@@ -683,7 +695,7 @@
 
   function confirmarEnvioWA(){
     document.getElementById("modalWA").classList.remove("show");
-    mostrarToast("Confirmación enviada por WhatsApp ✓");
+    mostrarToast("Simulación finalizada · no se envió ningún mensaje");
   }
 
   var calIdx = -1, calValor = 0;
@@ -726,12 +738,16 @@
       return;
     }
     document.getElementById("calTexto").style.color = "";
+    var anterior = JSON.parse(JSON.stringify(vehiculos[calIdx]));
     vehiculos[calIdx].calif = calValor;
     vehiculos[calIdx].comentarioCalif = document.getElementById("calComent").value.trim();
     vehiculos[calIdx].fallas = Array.prototype.map.call(
       document.querySelectorAll("#fallasBox .chip.on"), function(el){ return el.textContent; }
     );
-    guardarDatos();
+    if(!guardarDatos()){
+      vehiculos[calIdx] = anterior;
+      return;
+    }
     document.getElementById("modalCal").classList.remove("show");
     render();
     mostrarToast("Calificación registrada: " + calValor + " de 5");
@@ -776,6 +792,9 @@
   document.getElementById("inFrec").addEventListener("change", calcularPrecio);
   document.getElementById("inHora").addEventListener("change", calcularEntrega);
 
+  document.getElementById("fechaHoy").textContent = new Date().toLocaleDateString("es-MX", {
+    weekday:"long", year:"numeric", month:"long", day:"numeric"
+  });
   calcularPrecio();
   render();
 </script>

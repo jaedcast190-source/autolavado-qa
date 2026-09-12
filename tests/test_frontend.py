@@ -25,7 +25,7 @@ def test_calificacion_y_detalles_se_persisten():
     assert "comentarioCalif" in HTML
     assert "vehiculos[calIdx].fallas" in HTML
     rating_section = HTML[HTML.index("function guardarCalif()") : HTML.index("function cerrarCal(e)")]
-    assert "guardarDatos();" in rating_section
+    assert "if(!guardarDatos())" in rating_section
 
 
 def test_registro_conserva_fecha_de_cita():
