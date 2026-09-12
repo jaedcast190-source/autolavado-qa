@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autolavado — Panel de control</title>
+<style>
+  :root{
+    --azul:#185FA5; --azul-bg:#E6F1FB; --azul-tx:#0C447C;
+    --verde:#3B6D11; --verde-bg:#EAF3DE;
+    --ambar:#854F0B; --ambar-bg:#FAEEDA;
+    --gris-bg:#F1EFE8; --gris-bd:#D3D1C7; --gris-tx:#5F5E5A;
+    --texto:#2C2C2A; --blanco:#ffffff;
+    --sombra:0 1px 3px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#F7F6F1; color:var(--texto); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .topbar{
+    background:var(--blanco); border-bottom:1px solid var(--gris-bd);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 20px; position:sticky; top:0; z-index:10;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .logo{
+    width:36px; height:36px; border-radius:8px; background:var(--azul-bg);
+    display:flex; align-items:center; justify-content:center; font-size:20px;
+  }
+  .brand h1{font-size:16px; font-weight:600;}
+  .brand span{font-size:12px; color:var(--gris-tx); display:block; font-weight:400;}
+  .btn{
+    font-family:inherit; font-size:14px; font-weight:500; cursor:pointer;
+    border-radius:8px; padding:9px 16px; border:1px solid var(--gris-bd);
+    background:var(--blanco); color:var(--texto); transition:all .12s;
+  }
+  .btn:hover{background:var(--gris-bg);}
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--azul); color:var(--blanco); border-color:var(--azul);}
+  .btn-primary:hover{background:#12508c;}
+  .wrap{max-width:1100px; margin:0 auto; padding:20px;}
+  .metrics{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px;}
+  .metric{background:var(--blanco); border:1px solid var(--gris-bd); border-radius:12px; padding:14px 16px; box-shadow:var(--sombra);}
+  .metric .lbl{font-size:12px; color:var(--gris-tx);}
+  .metric .val{font-size:26px; font-weight:600; margin-top:2px;}
+  .grid{display:grid; grid-template-columns:360px 1fr; gap:20px; align-items:start;}
+  .card{background:var(--blanco); border:1px solid var(--gris-bd); border-radius:12px; box-shadow:var(--sombra);}
+  .card-h{padding:14px 18px; border-bottom:1px solid var(--gris-bd); font-size:14px; font-weight:600;}
+  .card-b{padding:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:13px; font-weight:500; margin-bottom:5px;}
+  .field label .req{color:#A32D2D;}
+  input,select,textarea{
+    font-family:inherit; font-size:14px; width:100%; padding:9px 11px;
+    border:1px solid var(--gris-bd); border-radius:8px; background:var(--blanco); color:var(--texto);
+  }
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--azul); box-shadow:0 0 0 3px var(--azul-bg);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .err{border-color:#A32D2D !important; box-shadow:0 0 0 3px #FCEBEB !important;}
+  .err-msg{color:#A32D2D; font-size:12px; margin-top:4px; display:none;}
+  .price-box{
+    background:var(--azul-bg); color:var(--azul-tx); border-radius:8px;
+    padding:12px 14px; font-size:13px; margin:4px 0 14px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .price-box b{font-size:18px;}
+  .queue-item{
+    display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--gris-bd);
+  }
+  .queue-item:last-child{border-bottom:none;}
+  .folio{font-size:11px; color:var(--gris-tx); font-family:monospace;}
+  .qi-time{min-width:48px; font-size:13px; font-weight:600;}
+  .qi-main{flex:1; min-width:0;}
+  .qi-main .name{font-size:14px; font-weight:500;}
+  .qi-main .sub{font-size:12px; color:var(--gris-tx);}
+  .tag{font-size:11px; padding:3px 9px; border-radius:20px; white-space:nowrap; font-weight:500;}
+  .tag-prof{background:var(--azul-bg); color:var(--azul-tx);}
+  .tag-est{background:var(--gris-bg); color:var(--gris-tx);}
+  .tag-exp{background:var(--ambar-bg); color:var(--ambar);}
+  .state{font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500; cursor:pointer; border:none; font-family:inherit;}
+  .st-espera{background:var(--gris-bg); color:var(--gris-tx);}
+  .st-proceso{background:var(--ambar-bg); color:var(--ambar);}
+  .st-listo{background:var(--verde-bg); color:var(--verde);}
+  .empty{padding:30px 18px; text-align:center; color:var(--gris-tx); font-size:13px;}
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--verde); color:#fff; padding:12px 20px; border-radius:10px; font-size:14px; font-weight:500;
+    opacity:0; transition:all .25s; box-shadow:0 4px 12px rgba(0,0,0,.15); z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .btn-wa{background:#25D366; color:#fff; border-color:#25D366;}
+  .btn-wa:hover{background:#1eb658;}
+  .btn-wa-out{background:#fff; color:#1eb658; border-color:#25D366;}
+  .btn-wa-out:hover{background:#EAF9EF;}
+  .modal-bg{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+    z-index:100; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal-bg.show{display:flex;}
+  .modal{
+    background:var(--blanco); border-radius:14px; width:100%; max-width:380px;
+    box-shadow:0 10px 40px rgba(0,0,0,.25); overflow:hidden;
+  }
+  .modal-h{display:flex; align-items:center; justify-content:space-between; padding:16px 18px 8px;}
+  .modal-x{background:none; border:none; font-size:18px; cursor:pointer; color:var(--gris-tx); line-height:1;}
+  .wa-screen{
+    background:#E5DDD5; margin:12px 16px; border-radius:10px; padding:16px 12px; min-height:120px;
+    background-image:radial-gradient(rgba(0,0,0,.02) 1px, transparent 1px); background-size:14px 14px;
+  }
+  .wa-bubble{
+    background:#DCF8C6; border-radius:10px; padding:10px 12px; font-size:13.5px; line-height:1.5;
+    max-width:88%; margin-left:auto; box-shadow:0 1px 1px rgba(0,0,0,.08); white-space:pre-wrap; color:#1a1a1a;
+  }
+  .wa-time{font-size:10px; color:#667781; text-align:right; margin-top:4px;}
+  .modal-f{display:flex; gap:10px; justify-content:flex-end; padding:12px 18px 18px;}
+  .st-entregado{background:#E6F1FB; color:#0C447C;}
+  .sub2{font-size:11px; color:var(--gris-tx); margin-top:2px;}
+  .qi-right{display:flex; flex-direction:column; align-items:flex-end; gap:5px;}
+  .qi-meta{display:flex; align-items:center; gap:6px;}
+  .pg{font-size:10px; padding:2px 7px; border-radius:20px; font-weight:500;}
+  .pg-si{background:var(--verde-bg); color:var(--verde);}
+  .pg-no{background:var(--gris-bg); color:var(--gris-tx);}
+  .calif-ok{font-size:11px; color:#BA7517; font-weight:500;}
+  .calif-na{font-size:11px; color:var(--gris-bd);}
+  .btn-calif{font-family:inherit; font-size:10px; padding:3px 8px; border-radius:20px; border:1px solid #EF9F27; background:#FAEEDA; color:#854F0B; cursor:pointer; font-weight:500;}
+  .btn-calif:hover{background:#F7E2C0;}
+  .stars{display:flex; gap:6px; justify-content:center; margin:6px 0 14px;}
+  .star{font-size:34px; cursor:pointer; color:#D3D1C7; transition:transform .1s; line-height:1;}
+  .star:hover{transform:scale(1.15);}
+  .star.on{color:#EF9F27;}
+  .fallas{display:none; flex-wrap:wrap; gap:7px; margin-bottom:14px;}
+  .fallas.show{display:flex;}
+  .chip{font-family:inherit; font-size:12px; padding:6px 12px; border-radius:20px; border:1px solid var(--gris-bd); background:#fff; cursor:pointer; color:var(--texto);}
+  .chip.on{background:#FCEBEB; border-color:#E24B4A; color:#A32D2D; font-weight:500;}
+  @media(max-width:820px){ .grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">🚿</div>
+    <div><h1>Autolavado — Panel de control<span id="fechaHoy">Sábado 29 de agosto</span></h1></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span style="font-size:11px;padding:4px 9px;border-radius:20px;background:#EAF3DE;color:#3B6D11;font-weight:600">QA v2 · local</span>
+    <button class="btn" onclick="exportarDatos()">⬇ Respaldo</button>
+    <button class="btn" onclick="document.getElementById('inNombre').focus()">＋ Nuevo ingreso</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="metrics">
+    <div class="metric"><div class="lbl">Vehículos hoy</div><div class="val" id="mTotal">3</div></div>
+    <div class="metric"><div class="lbl">En proceso</div><div class="val" style="color:var(--ambar)" id="mProceso">1</div></div>
+    <div class="metric"><div class="lbl">Terminados</div><div class="val" style="color:var(--verde)" id="mListo">1</div></div>
+    <div class="metric"><div class="lbl">Ingreso del día</div><div class="val" id="mIngreso">$430</div></div>
+    <div class="metric"><div class="lbl">Calificación</div><div class="val" style="color:#BA7517" id="mCalif">—</div></div>
+  </div>
+
+  <div class="grid">
+
+    <!-- FORMULARIO DE ENTRADA -->
+    <div class="card">
+      <div class="card-h">Registrar entrada de vehículo</div>
+      <div class="card-b">
+
+        <div class="field">
+          <label>Nombre del cliente <span class="req">*</span></label>
+          <input id="inNombre" placeholder="Ej. Juan Ramírez" autocomplete="off">
+          <div class="err-msg" id="errNombre">Escribe el nombre del cliente</div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Teléfono</label>
+            <input id="inTel" placeholder="477 123 4567" inputmode="tel" autocomplete="off" maxlength="14">
+            <div class="err-msg" id="errTel">Captura un teléfono válido de 10 dígitos</div>
+          </div>
+          <div class="field">
+            <label>Placa <span class="req">*</span></label>
+            <input id="inPlaca" placeholder="GKL-482" autocomplete="off" style="text-transform:uppercase">
+            <div class="err-msg" id="errPlaca">Captura una placa válida y no duplicada</div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Tipo de vehículo</label>
+            <select id="inTipo" onchange="calcularPrecio()">
+              <option value="Auto">Auto</option>
+              <option value="SUV">SUV</option>
+              <option value="Camioneta">Camioneta</option>
+              <option value="Moto">Moto</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Bahía</label>
+            <select id="inBahia">
+              <option value="Bahía 1">Bahía 1</option>
+              <option value="Bahía 2">Bahía 2</option>
+              <option value="Bahía 3">Bahía 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Responsable del lavado</label>
+            <select id="inResp">
+              <option value="Irving">Irving</option>
+              <option value="Román">Román</option>
+              <option value="Alex">Alex</option>
+              <option value="Francisco">Francisco</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Kilometraje (opcional)</label>
+            <input id="inKm" placeholder="84,300" inputmode="numeric" autocomplete="off">
+          </div>
+        </div>
+
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:14px; cursor:pointer;">
+          <input type="checkbox" id="inFrec" style="width:auto; margin:0;">
+          Cliente frecuente (aplica descuento del 10%)
+        </label>
+
+        <div class="row2">
+          <div class="field">
+            <label>Fecha de la cita</label>
+            <input id="inFecha" type="date">
+          </div>
+          <div class="field">
+            <label>Hora de la cita</label>
+            <input id="inHora" type="time" value="10:30">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Tipo de lavado</label>
+          <select id="inLavado" onchange="calcularPrecio()">
+            <option value="Express" data-min="15">Express — exterior rápido (15 min)</option>
+            <option value="Estándar" data-min="30" selected>Estándar — ext. + int. básico (30 min)</option>
+            <option value="Profundo" data-min="90">Profundo — detallado completo (90 min)</option>
+          </select>
+        </div>
+
+        <div class="price-box" style="display:block;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Precio estimado</span>
+            <b id="precioEst">$150</b>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; padding-top:6px; border-top:1px solid rgba(12,68,124,.15);">
+            <span>Entrega estimada</span>
+            <b id="entregaEst" style="font-size:15px;">11:00 hrs</b>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Método de pago</label>
+          <select id="inPago">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Por definir">Por definir</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Notas (opcional)</label>
+          <textarea id="inNotas" rows="2" placeholder="Ej. mancha en asiento trasero, cliente espera"></textarea>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%" onclick="registrarVehiculo()">Registrar entrada</button>
+        <button class="btn btn-wa" style="width:100%; margin-top:10px;" onclick="enviarWhatsApp('confirmacion')"><span style="font-size:16px; vertical-align:-2px; margin-right:6px;">📲</span>Enviar confirmación por WhatsApp</button>
+        <button class="btn btn-wa-out" style="width:100%; margin-top:8px;" onclick="enviarWhatsApp('recordatorio')"><span style="font-size:16px; vertical-align:-2px; margin-right:6px;">🔔</span>Enviar recordatorio (1 día antes)</button>
+      </div>
+    </div>
+
+    <!-- TABLERO EN VIVO -->
+    <div class="card">
+      <div class="card-h">Vehículos del día <span style="font-weight:400; color:var(--gris-tx); font-size:12px;">(toca el estado para cambiarlo)</span></div>
+      <div id="cola"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL PRUEBA WHATSAPP -->
+<div class="modal-bg" id="modalWA" onclick="cerrarWA(event)">
+  <div class="modal">
+    <div class="modal-h">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:20px;">📲</span>
+        <b style="font-size:15px;" id="waTitulo">Prueba de mensaje WhatsApp</b>
+      </div>
+      <button class="modal-x" onclick="cerrarWA()">✕</button>
+    </div>
+    <p style="font-size:12px; color:var(--gris-tx); padding:0 18px;">Así se vería el mensaje que le llega al cliente (simulación).</p>
+    <div class="wa-screen">
+      <div class="wa-bubble">
+        <div id="waTexto"></div>
+        <div class="wa-time" id="waHoraEnvio">10:30 ✓✓</div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="cerrarWA()">Cerrar</button>
+      <button class="btn btn-wa" onclick="confirmarEnvioWA()">Marcar como enviado</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CALIFICACIÓN DEL CLIENTE -->
+<div class="modal-bg" id="modalCal" onclick="cerrarCal(event)">
+  <div class="modal">
+    <div class="modal-h">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:20px;">⭐</span>
+        <b style="font-size:15px;">Calificar el servicio</b>
+      </div>
+      <button class="modal-x" onclick="cerrarCal()">✕</button>
+    </div>
+    <div style="padding:0 18px 6px;">
+      <p style="font-size:13px; color:var(--gris-tx);" id="calCliente">Folio · cliente</p>
+    </div>
+    <div style="padding:0 18px;">
+      <p style="font-size:13px; text-align:center; margin-top:8px;">¿Cómo quedó su vehículo?</p>
+      <div class="stars" id="starBox">
+        <span class="star" onclick="setEstrellas(1)">★</span>
+        <span class="star" onclick="setEstrellas(2)">★</span>
+        <span class="star" onclick="setEstrellas(3)">★</span>
+        <span class="star" onclick="setEstrellas(4)">★</span>
+        <span class="star" onclick="setEstrellas(5)">★</span>
+      </div>
+      <p style="font-size:12px; color:var(--gris-tx); text-align:center; margin-bottom:12px;" id="calTexto">Toca una estrella</p>
+
+      <div class="fallas" id="fallasBox">
+        <button class="chip" onclick="toggleChip(this)">Interior</button>
+        <button class="chip" onclick="toggleChip(this)">Exterior</button>
+        <button class="chip" onclick="toggleChip(this)">Rines</button>
+        <button class="chip" onclick="toggleChip(this)">Tiempo de entrega</button>
+        <button class="chip" onclick="toggleChip(this)">Trato del personal</button>
+      </div>
+
+      <div class="field">
+        <label style="font-size:12px;">Comentario (opcional)</label>
+        <textarea id="calComent" rows="2" placeholder="Ej. quedó bien, solo faltó la cajuela"></textarea>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="cerrarCal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCalif()">Guardar calificación</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // Tarifas base por tipo de lavado y multiplicador por vehículo
+  var TARIFA = { "Express":80, "Estándar":150, "Profundo":350 };
+  var FACTOR = { "Auto":1, "SUV":1.3, "Camioneta":1.5, "Moto":0.6 };
+  var TAGCLASS = { "Express":"tag-exp", "Estándar":"tag-est", "Profundo":"tag-prof" };
+  var ESTADOS = ["Espera","En proceso","Listo","Entregado"];
+  var STCLASS = { "Espera":"st-espera", "En proceso":"st-proceso", "Listo":"st-listo", "Entregado":"st-entregado" };
+  var DURACION = { "Express":15, "Estándar":30, "Profundo":90 };
+
+  var STORAGE_KEY = "autolavado_qa_v2";
+  var folioNum = 3;
+  var vehiculosDemo = [
+    { folio:"CW-0001", hora:"09:15", horaCita:"09:15", entrega:"09:45", nombre:"Dr. Ana Torres", sub:"Auto · MPV-556", placa:"MPV-556", lavado:"Estándar", precio:150, resp:"Irving", bahia:"Bahía 1", pago:"Efectivo", pagado:true, frec:false, km:"", estado:"Entregado", calif:5, creadoEn:"demo" },
+    { folio:"CW-0002", hora:"09:50", horaCita:"09:50", entrega:"10:05", nombre:"Dr. Carlos Núñez", sub:"SUV · JFD-703", placa:"JFD-703", lavado:"Express", precio:104, resp:"Román", bahia:"Bahía 2", pago:"Tarjeta", pagado:true, frec:true, km:"", estado:"Listo", calif:0, creadoEn:"demo" },
+    { folio:"CW-0003", hora:"10:10", horaCita:"10:10", entrega:"10:40", nombre:"Dra. María López", sub:"Auto · HTR-119", placa:"HTR-119", lavado:"Estándar", precio:150, resp:"Alex", bahia:"Bahía 3", pago:"Por definir", pagado:false, frec:false, km:"", estado:"En proceso", calif:0, creadoEn:"demo" }
+  ];
+  var vehiculos = cargarDatos();
+
+  function cargarDatos(){
+    try{
+      var guardado = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if(guardado && Array.isArray(guardado.vehiculos)){
+        folioNum = guardado.folioNum || guardado.vehiculos.length;
+        return guardado.vehiculos;
+      }
+    }catch(e){}
+    return vehiculosDemo.slice();
+  }
+
+  function guardarDatos(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({folioNum:folioNum, vehiculos:vehiculos}));
+  }
+
+  function normalizarPlaca(v){
+    return (v || "").toUpperCase().replace(/\s+/g,"").replace(/[^A-Z0-9-]/g,"");
+  }
+
+  function placaActivaDuplicada(placa){
+    var p = normalizarPlaca(placa);
+    return vehiculos.some(function(v){
+      var vp = normalizarPlaca(v.placa || ((v.sub||"").split("·")[1]||""));
+      return vp === p && v.estado !== "Entregado" && v.estado !== "Cancelado";
+    });
+  }
+
+  function calcularPrecio(){
+    var lavado = document.getElementById("inLavado").value;
+    var tipo = document.getElementById("inTipo").value;
+    var frec = document.getElementById("inFrec").checked;
+    var precio = Math.round(TARIFA[lavado] * FACTOR[tipo]);
+    if(frec) precio = Math.round(precio * 0.9);
+    document.getElementById("precioEst").textContent = "$" + precio + (frec ? " (-10%)" : "");
+    calcularEntrega();
+    return precio;
+  }
+
+  function calcularEntrega(){
+    var lavado = document.getElementById("inLavado").value;
+    var hora = document.getElementById("inHora").value;
+    if(!hora){ document.getElementById("entregaEst").textContent = "—"; return ""; }
+    var p = hora.split(":");
+    var d = new Date(2026, 0, 1, parseInt(p[0],10), parseInt(p[1],10));
+    d.setMinutes(d.getMinutes() + DURACION[lavado]);
+    var hh = (d.getHours()<10?"0":"") + d.getHours();
+    var mm = (d.getMinutes()<10?"0":"") + d.getMinutes();
+    var txt = hh + ":" + mm;
+    document.getElementById("entregaEst").textContent = txt + " hrs";
+    return txt;
+  }
+
+  function ahora(){
+    var d = new Date();
+    var h = d.getHours(), m = d.getMinutes();
+    return (h<10?"0":"")+h + ":" + (m<10?"0":"")+m;
+  }
+
+  function limpiarError(id){
+    var el = document.getElementById(id);
+    el.classList.remove("err");
+    document.getElementById("err"+id.slice(2)).style.display = "none";
+  }
+
+  function registrarVehiculo(){
+    var nombre = document.getElementById("inNombre");
+    var placa = document.getElementById("inPlaca");
+    var tel = document.getElementById("inTel");
+    var ok = true;
+    var placaNorm = normalizarPlaca(placa.value);
+    var telNorm = tel.value.replace(/\D/g,"");
+
+    if(!nombre.value.trim()){
+      nombre.classList.add("err"); document.getElementById("errNombre").style.display="block"; ok=false;
+    } else limpiarError("inNombre");
+
+    if(placaNorm.length < 5 || placaActivaDuplicada(placaNorm)){
+      placa.classList.add("err"); document.getElementById("errPlaca").style.display="block"; ok=false;
+    } else limpiarError("inPlaca");
+
+    if(tel.value.trim() && telNorm.length !== 10){
+      tel.classList.add("err"); document.getElementById("errTel").style.display="block"; ok=false;
+    } else {
+      tel.classList.remove("err"); document.getElementById("errTel").style.display="none";
+    }
+
+    if(!ok) return;
+
+    folioNum++;
+    var tipo = document.getElementById("inTipo").value;
+    var lavado = document.getElementById("inLavado").value;
+    var precio = calcularPrecio();
+
+    vehiculos.push({
+      folio: "CW-" + String(folioNum).padStart(4,"0"),
+      hora: ahora(),
+      horaCita: document.getElementById("inHora").value || "—",
+      entrega: calcularEntrega(),
+      nombre: nombre.value.trim(),
+      telefono: telNorm,
+      placa: placaNorm,
+      sub: tipo + " · " + placaNorm,
+      lavado: lavado,
+      precio: precio,
+      tarifaHistorica: precio,
+      resp: document.getElementById("inResp").value,
+      bahia: document.getElementById("inBahia").value,
+      pago: document.getElementById("inPago").value,
+      pagado: false,
+      frec: document.getElementById("inFrec").checked,
+      km: document.getElementById("inKm").value.trim(),
+      notas: document.getElementById("inNotas").value.trim(),
+      estado: "Espera",
+      calif: 0,
+      creadoEn: new Date().toISOString(),
+      historial: [{estado:"Espera", fecha:new Date().toISOString()}]
+    });
+
+    guardarDatos();
+
+    nombre.value = ""; placa.value = ""; tel.value = "";
+    document.getElementById("inNotas").value = "";
+    document.getElementById("inLavado").selectedIndex = 1;
+    document.getElementById("inTipo").selectedIndex = 0;
+    document.getElementById("inKm").value = "";
+    document.getElementById("inFrec").checked = false;
+    calcularPrecio();
+
+    render();
+    mostrarToast("Vehículo registrado · " + vehiculos[vehiculos.length-1].folio);
+    nombre.focus();
+  }
+
+  function cambiarEstado(i){
+    var actual = vehiculos[i].estado;
+    var idx = ESTADOS.indexOf(actual);
+    if(idx < 0 || idx >= ESTADOS.length - 1){
+      mostrarToast(actual === "Entregado" ? "Servicio cerrado · no puede regresar a espera" : "Estado no modificable");
+      return;
+    }
+    vehiculos[i].estado = ESTADOS[idx+1];
+    if(!vehiculos[i].historial) vehiculos[i].historial = [];
+    vehiculos[i].historial.push({estado:vehiculos[i].estado, fecha:new Date().toISOString()});
+    if(vehiculos[i].estado === "Entregado") vehiculos[i].pagado = true;
+    guardarDatos();
+    render();
+  }
+
+  function render(){
+    var cont = document.getElementById("cola");
+    if(vehiculos.length === 0){
+      cont.innerHTML = '<div class="empty">Sin vehículos registrados. Captura una entrada para empezar.</div>';
+      actualizarMetricas();
+      return;
+    }
+    var html = "";
+    for(var i=0;i<vehiculos.length;i++){
+      var v = vehiculos[i];
+      var estrellas = "";
+      if(v.calif > 0){
+        estrellas = '<span class="calif-ok">';
+        for(var e=0;e<v.calif;e++) estrellas += "★";
+        estrellas += " " + v.calif + ".0</span>";
+      } else if(v.estado === "Entregado" || v.estado === "Listo"){
+        estrellas = '<button class="btn-calif" onclick="abrirCalif('+i+')">Calificar</button>';
+      } else {
+        estrellas = '<span class="calif-na">—</span>';
+      }
+      var pagoTxt = v.pagado ? '<span class="pg pg-si">Pagado</span>' : '<span class="pg pg-no">'+v.pago+'</span>';
+      html += '<div class="queue-item">'
+        + '<div class="qi-time">'+v.horaCita+'<div class="folio">'+v.folio+'</div></div>'
+        + '<div class="qi-main"><div class="name">'+v.nombre+'</div>'
+        + '<div class="sub">'+v.sub+' · $'+v.precio+(v.frec?' ★':'')+'</div>'
+        + '<div class="sub2">'+v.bahia+' · '+v.resp+' · entrega '+v.entrega+'</div></div>'
+        + '<div class="qi-right">'
+        + '<span class="tag '+TAGCLASS[v.lavado]+'">'+v.lavado+'</span>'
+        + '<button class="state '+STCLASS[v.estado]+'" onclick="cambiarEstado('+i+')">'+v.estado+'</button>'
+        + '<div class="qi-meta">'+pagoTxt+' '+estrellas+'</div>'
+        + '</div></div>';
+    }
+    cont.innerHTML = html;
+    actualizarMetricas();
+  }
+
+  function actualizarMetricas(){
+    var proceso=0, listo=0, ingreso=0;
+    for(var i=0;i<vehiculos.length;i++){
+      if(vehiculos[i].estado==="En proceso") proceso++;
+      if(vehiculos[i].estado==="Listo" || vehiculos[i].estado==="Entregado") listo++;
+      if(vehiculos[i].pagado || vehiculos[i].estado==="Entregado") ingreso += Number(vehiculos[i].precio || 0);
+    }
+    document.getElementById("mTotal").textContent = vehiculos.length;
+    document.getElementById("mProceso").textContent = proceso;
+    document.getElementById("mListo").textContent = listo;
+    document.getElementById("mIngreso").textContent = "$" + ingreso.toLocaleString();
+
+    var sumaC = 0, nC = 0;
+    for(var j=0;j<vehiculos.length;j++){
+      if(vehiculos[j].calif > 0){ sumaC += vehiculos[j].calif; nC++; }
+    }
+    document.getElementById("mCalif").textContent = nC ? (sumaC/nC).toFixed(1) + " ★" : "—";
+  }
+
+  function fechaLegible(valor){
+    if(!valor) return "hoy";
+    var p = valor.split("-");
+    var meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    return parseInt(p[2],10) + " de " + meses[parseInt(p[1],10)-1];
+  }
+
+  function enviarWhatsApp(tipo){
+    var nombre = document.getElementById("inNombre").value.trim() || "Doctor(a)";
+    var hora = document.getElementById("inHora").value || "10:30";
+    var fecha = fechaLegible(document.getElementById("inFecha").value);
+    var lavado = document.getElementById("inLavado").value;
+    var entrega = calcularEntrega();
+    var msg, titulo;
+
+    if(tipo === "recordatorio"){
+      titulo = "Prueba de recordatorio (1 día antes)";
+      msg =
+        "Hola " + nombre + " 👋\n\n" +
+        "Le recordamos que *mañana* tiene su cita en el Autolavado 🔔\n\n" +
+        "📅 Fecha: " + fecha + "\n" +
+        "🕐 Horario: " + hora + " hrs\n" +
+        "🚿 Servicio: lavado " + lavado + "\n" +
+        "🚗 Entrega estimada: " + entrega + " hrs\n\n" +
+        "⚠️ Si no podrá asistir, este es el *último día* para cancelar sin costo. Después de hoy se aplicará un *costo extra* por cancelación.\n\n" +
+        "¡Lo esperamos!";
+    } else {
+      titulo = "Prueba de mensaje WhatsApp";
+      msg =
+        "Hola " + nombre + " 👋\n\n" +
+        "Su cita en el Autolavado quedó *agendada* ✅\n\n" +
+        "📅 Fecha: " + fecha + "\n" +
+        "🕐 Horario: " + hora + " hrs\n" +
+        "🚿 Servicio: lavado " + lavado + "\n" +
+        "🚗 Entrega estimada: " + entrega + " hrs\n\n" +
+        "⚠️ *Política de cancelación:* si necesita cancelar, avísenos con *un día de anticipación*. De lo contrario se aplicará un *costo extra*.\n\n" +
+        "¡Gracias por su preferencia!";
+    }
+
+    document.getElementById("waTitulo").textContent = titulo;
+    document.getElementById("waTexto").textContent = msg;
+    document.getElementById("waHoraEnvio").textContent = ahora() + " ✓✓";
+    document.getElementById("modalWA").classList.add("show");
+  }
+
+  function cerrarWA(e){
+    if(e && e.target !== e.currentTarget) return;
+    document.getElementById("modalWA").classList.remove("show");
+  }
+
+  function confirmarEnvioWA(){
+    document.getElementById("modalWA").classList.remove("show");
+    mostrarToast("Confirmación enviada por WhatsApp ✓");
+  }
+
+  var calIdx = -1, calValor = 0;
+
+  function abrirCalif(i){
+    calIdx = i; calValor = 0;
+    var v = vehiculos[i];
+    document.getElementById("calCliente").textContent = v.folio + " · " + v.nombre + " · atendió " + v.resp;
+    document.getElementById("calComent").value = "";
+    document.getElementById("calTexto").textContent = "Toca una estrella";
+    document.getElementById("fallasBox").classList.remove("show");
+    var chips = document.querySelectorAll("#fallasBox .chip");
+    for(var k=0;k<chips.length;k++) chips[k].classList.remove("on");
+    pintarEstrellas(0);
+    document.getElementById("modalCal").classList.add("show");
+  }
+
+  function pintarEstrellas(n){
+    var st = document.querySelectorAll("#starBox .star");
+    for(var k=0;k<st.length;k++){
+      if(k < n) st[k].classList.add("on"); else st[k].classList.remove("on");
+    }
+  }
+
+  function setEstrellas(n){
+    calValor = n;
+    pintarEstrellas(n);
+    var msj = ["","Muy mal","Mal","Regular","Bien","Excelente"][n];
+    document.getElementById("calTexto").textContent = msj;
+    var fb = document.getElementById("fallasBox");
+    if(n <= 3){ fb.classList.add("show"); } else { fb.classList.remove("show"); }
+  }
+
+  function toggleChip(el){ el.classList.toggle("on"); }
+
+  function guardarCalif(){
+    if(calValor === 0){
+      document.getElementById("calTexto").textContent = "Selecciona una calificación primero";
+      document.getElementById("calTexto").style.color = "#A32D2D";
+      return;
+    }
+    document.getElementById("calTexto").style.color = "";
+    vehiculos[calIdx].calif = calValor;
+    document.getElementById("modalCal").classList.remove("show");
+    render();
+    mostrarToast("Calificación registrada: " + calValor + " de 5");
+  }
+
+  function cerrarCal(e){
+    if(e && e.target !== e.currentTarget) return;
+    document.getElementById("modalCal").classList.remove("show");
+  }
+
+  var toastTimer;
+  function mostrarToast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2500);
+  }
+
+  document.getElementById("inNombre").addEventListener("input", function(){ limpiarError("inNombre"); });
+  document.getElementById("inPlaca").addEventListener("input", function(){ limpiarError("inPlaca"); });
+  document.getElementById("inTel").addEventListener("input", function(){
+    this.classList.remove("err"); document.getElementById("errTel").style.display="none";
+  });
+
+  function exportarDatos(){
+    var blob = new Blob([JSON.stringify({version:"QA v2", exportado:new Date().toISOString(), vehiculos:vehiculos}, null, 2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "autolavado_respaldo_" + new Date().toISOString().slice(0,10) + ".json";
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    mostrarToast("Respaldo generado");
+  }
+
+  document.getElementById("inFrec").addEventListener("change", calcularPrecio);
+  document.getElementById("inHora").addEventListener("change", calcularEntrega);
+
+  calcularPrecio();
+  render();
+</script>
+</body>
+</html>
