@@ -68,6 +68,17 @@
     display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--gris-bd);
   }
   .queue-item:last-child{border-bottom:none;}
+  /* Grupos de hora desplegables en la lista del día */
+  .hora-grupo{border-bottom:1px solid var(--gris-bd);}
+  .hora-grupo:last-child{border-bottom:none;}
+  .hora-grupo summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 18px;user-select:none;}
+  .hora-grupo summary::-webkit-details-marker{display:none;}
+  .hora-grupo summary::before{content:"▸";color:var(--azul);font-size:13px;transition:transform .2s;}
+  .hora-grupo[open] summary::before{transform:rotate(90deg);}
+  .hora-grupo summary:hover{background:var(--azul-bg);}
+  .hg-hora{font-weight:700;font-size:15px;}
+  .hg-info{color:var(--gris-tx);font-size:13px;}
+  .hg-cuerpo{border-top:1px solid var(--gris-bd);}
   .folio{font-size:11px; color:var(--gris-tx); font-family:monospace;}
   .qi-time{min-width:48px; font-size:13px; font-weight:600;}
   .qi-main{flex:1; min-width:0;}
@@ -1309,17 +1320,73 @@
     if(actual === "En proceso") mostrarToast("Servicio terminado. Retira el vehículo de la bahía antes de iniciar el siguiente.");
   }
 
+  // ¿Este auto debe verse en la lista del día?
+  // Sí si es de hoy; o si es de un día pasado pero NO se ha entregado (sigue pendiente de recoger).
+  function visibleEnDia(v){
+    var hoy = fechaLocalISO();
+    var f = (v.creadoEn && v.creadoEn !== "demo") ? String(v.creadoEn).slice(0,10) : hoy;
+    if(f === hoy) return true;                       // de hoy: siempre
+    return v.estado !== "Entregado";                 // viejo: solo si aún no lo recogen
+  }
+  // Agrupa en bloques de hora: "09", "10"...
+  function bloqueHora(v){
+    var h = (v.horaCita && /^\d{1,2}:/.test(v.horaCita)) ? v.horaCita.split(":")[0] : (v.hora || "").split(":")[0];
+    return h ? (h.padStart(2,"0")+":00") : "Sin hora";
+  }
+
   function render(){
     var cont = document.getElementById("cola");
-    if(vehiculos.length === 0){
-      cont.innerHTML = '<div class="empty">Sin vehículos registrados. Captura una entrada para empezar.</div>';
+
+    // Filtrar: solo autos del día + pendientes viejos. Conservar el índice real.
+    var items = [];
+    for(var k=0;k<vehiculos.length;k++){
+      if(visibleEnDia(vehiculos[k])) items.push({v:vehiculos[k], i:k});
+    }
+    // Ordenar por hora de cita, luego por folio
+    items.sort(function(a,b){
+      var ha=(a.v.horaCita||a.v.hora||""), hb=(b.v.horaCita||b.v.hora||"");
+      return ha < hb ? -1 : ha > hb ? 1 : (a.i - b.i);
+    });
+
+    if(items.length === 0){
+      cont.innerHTML = '<div class="empty">Sin vehículos para mostrar hoy. Captura una entrada para empezar.</div>';
       actualizarMetricas();
       renderTecnico();
       return;
     }
+
+    // Agrupar por bloque de hora
+    var grupos = {}, ordenGrupos = [];
+    items.forEach(function(it){
+      var g = bloqueHora(it.v);
+      if(!grupos[g]){ grupos[g] = []; ordenGrupos.push(g); }
+      grupos[g].push(it);
+    });
+
     var html = "";
-    for(var i=0;i<vehiculos.length;i++){
-      var v = vehiculos[i];
+    ordenGrupos.forEach(function(g){
+      var lista = grupos[g];
+      var pendientes = lista.filter(function(it){return it.v.estado !== "Entregado";}).length;
+      // Un grupo arranca abierto si tiene autos pendientes; cerrado si ya todos entregados.
+      var abierto = pendientes > 0 ? "open" : "";
+      html += '<details class="hora-grupo" '+abierto+'><summary><span class="hg-hora">'+escaparHTML(g)+'</span>'
+        + '<span class="hg-info">'+lista.length+(lista.length===1?' auto':' autos')
+        + (pendientes>0 ? ' · '+pendientes+' pendiente'+(pendientes===1?'':'s') : ' · todos entregados')+'</span></summary>'
+        + '<div class="hg-cuerpo">';
+      lista.forEach(function(it){
+        html += tarjetaRecepcion(it.v, it.i);
+      });
+      html += '</div></details>';
+    });
+    cont.innerHTML = html;
+    actualizarMetricas();
+    actualizarRecursos();
+    renderTecnico();
+  }
+
+  // Genera la tarjeta de un auto en la lista de recepción (índice real i).
+  function tarjetaRecepcion(v, i){
+    {
       var nombreSeguro = escaparHTML(v.nombre);
       var subSeguro = escaparHTML(v.sub);
       var folioSeguro = escaparHTML(v.folio);
@@ -1341,7 +1408,7 @@
       var tiempos = (v.inicioReal ? "Inicio: "+horaReal(v.inicioReal)+" · " : "") + (v.finReal ? "Terminado: "+horaReal(v.finReal)+" · " : "") + (v.entregaReal ? "Entregado: "+horaReal(v.entregaReal) : "");
       var saldo=saldoCentavos(v);
       var pagoTxt = saldo === 0 ? '<span class="pg pg-si">Pagado</span><button class="btn-calif" onclick="abrirCobro('+i+')">Ver cobros</button>' : '<span class="pg pg-no">'+(saldo < centavos(v.precio) ? 'Abonado · ' : '')+'Pendiente '+dinero(saldo)+'</span><button class="btn-calif" onclick="abrirCobro('+i+')">Cobrar / abonar</button>';
-      html += '<div class="queue-item">'
+      return '<div class="queue-item">'
         + '<div class="qi-time">'+escaparHTML(v.horaCita)+'<div class="folio">'+folioSeguro+'</div></div>'
         + '<div class="qi-main"><div class="name">'+nombreSeguro+'</div>'
         + '<div class="rec-vehicle">'+escaparHTML(detalleVehiculo(v))+'</div>'
@@ -1355,10 +1422,6 @@
         + (v.codigo ? '<div class="qi-meta"><button class="btn-calif" onclick="mostrarQR('+i+')">📱 Código QR cliente</button></div>' : '')
         + '</div></div>';
     }
-    cont.innerHTML = html;
-    actualizarMetricas();
-    actualizarRecursos();
-    renderTecnico();
   }
 
   function actualizarMetricas(){

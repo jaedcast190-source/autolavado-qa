@@ -320,6 +320,19 @@ def api_leer_estado():
     return jsonify(ok=True, estado=estado)
 
 
+def _sin_duplicados(vehiculos):
+    """Quita vehículos con folio repetido (gana el último que aparece)."""
+    vistos = {}
+    orden = []
+    for v in vehiculos:
+        f = v.get("folio")
+        clave = f if f else id(v)
+        if clave not in vistos:
+            orden.append(clave)
+        vistos[clave] = v
+    return [vistos[k] for k in orden]
+
+
 @app.put("/api/estado")
 def api_guardar_estado():
     data = request.get_json(silent=True)
@@ -330,7 +343,7 @@ def api_guardar_estado():
 
     estado = {
         "folioNum": int(data.get("folioNum", 0)) if str(data.get("folioNum", "")).lstrip("-").isdigit() else 0,
-        "vehiculos": data.get("vehiculos", []),
+        "vehiculos": _sin_duplicados(data.get("vehiculos", [])),
         "cierresCaja": data.get("cierresCaja", []) if isinstance(data.get("cierresCaja"), list) else [],
         "salidasCaja": data.get("salidasCaja", []) if isinstance(data.get("salidasCaja"), list) else [],
     }
@@ -363,13 +376,26 @@ def api_guardar_activos():
     estado = db.leer_estado() or dict(db.ESTADO_POR_DEFECTO)
     previos = estado.get("vehiculos", [])
 
-    # Conserva del servidor todo lo que NO es "de hoy ni activo":
-    # es decir, los históricos (días anteriores) y los ya entregados de hoy
-    # no vienen en la carga del frontend. Reconstruimos:
-    #   histórico = autos cuya fecha != hoy  (no los toca el frontend)
-    #   los de hoy los reemplaza por completo con lo que mandó el frontend.
+    # El frontend manda los autos "de hoy" (activos). Conservamos del servidor
+    # los que NO son de hoy (histórico de días anteriores).
     historico = [v for v in previos if _fecha_vehiculo(v) != hoy]
-    estado["vehiculos"] = historico + activos
+
+    # Deduplicar por folio: un folio nunca debe aparecer dos veces. Los que
+    # vienen del frontend (activos) tienen prioridad sobre el histórico.
+    folios_activos = {v.get("folio") for v in activos if v.get("folio")}
+    historico = [v for v in historico if v.get("folio") not in folios_activos]
+
+    # Y dentro de los activos, quitar cualquier folio repetido (gana el último).
+    vistos = {}
+    for v in activos:
+        f = v.get("folio")
+        if f:
+            vistos[f] = v
+        else:
+            vistos[id(v)] = v  # sin folio: conservar por identidad
+    activos_unicos = list(vistos.values())
+
+    estado["vehiculos"] = _sin_duplicados(historico + activos_unicos)
 
     if str(data.get("folioNum", "")).lstrip("-").isdigit():
         estado["folioNum"] = int(data["folioNum"])
