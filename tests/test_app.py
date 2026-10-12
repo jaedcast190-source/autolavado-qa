@@ -137,3 +137,91 @@ def test_guardar_config(cliente):
 def test_config_rechaza_sin_nombre(cliente):
     r = cliente.put("/api/config", json={"servicios": {"X": {"precio": 1, "minutos": 1}}})
     assert r.status_code == 400
+
+
+# --- Fases ---
+def test_config_trae_fases(cliente):
+    r = cliente.get("/api/config")
+    fases = r.get_json().get("fases", [])
+    assert len(fases) >= 1
+    assert all("nombre" in f and "minutos" in f for f in fases)
+
+
+def test_guardar_fases(cliente):
+    cfg = {
+        "nombre_negocio": "Autolavado",
+        "servicios": {"Express": {"precio": 80, "minutos": 15, "activo": True}},
+        "fases": [{"id": "f1", "nombre": "Lavado", "minutos": 10, "activo": True},
+                  {"id": "f2", "nombre": "Secado", "minutos": 5, "activo": True}],
+    }
+    r = cliente.put("/api/config", json=cfg)
+    assert r.status_code == 200
+    fases = r.get_json()["config"]["fases"]
+    assert [f["nombre"] for f in fases] == ["Lavado", "Secado"]
+
+
+# --- Seguimiento del cliente ---
+def test_seguimiento_codigo_valido(cliente):
+    estado = {"folioNum": 1, "vehiculos": [
+        {"folio": "CW-0001", "codigo": "ABC123", "placa": "XYZ-000",
+         "lavado": "Express", "estado": "En proceso", "faseActual": 1}],
+        "cierresCaja": [], "salidasCaja": []}
+    cliente.put("/api/estado", json=estado)
+    r = cliente.get("/api/seguimiento/ABC123")
+    assert r.status_code == 200
+    v = r.get_json()["vehiculo"]
+    assert v["placa"] == "XYZ-000"
+    assert v["estado"] == "En proceso"
+
+
+def test_seguimiento_no_expone_otros(cliente):
+    # El endpoint devuelve solo campos públicos, no cobros ni teléfono
+    estado = {"folioNum": 1, "vehiculos": [
+        {"folio": "CW-0001", "codigo": "ABC123", "placa": "XYZ-000", "telefono": "4771234567",
+         "lavado": "Express", "estado": "Listo", "cobros": [{"centavos": 8000}]}],
+        "cierresCaja": [], "salidasCaja": []}
+    cliente.put("/api/estado", json=estado)
+    v = cliente.get("/api/seguimiento/ABC123").get_json()["vehiculo"]
+    assert "telefono" not in v
+    assert "cobros" not in v
+
+
+def test_seguimiento_codigo_inexistente(cliente):
+    r = cliente.get("/api/seguimiento/NOEXISTE")
+    assert r.status_code == 404
+
+
+def test_seguimiento_calificar(cliente):
+    estado = {"folioNum": 1, "vehiculos": [
+        {"folio": "CW-0001", "codigo": "ABC123", "placa": "XYZ-000",
+         "lavado": "Express", "estado": "Entregado", "calif": 0}],
+        "cierresCaja": [], "salidasCaja": []}
+    cliente.put("/api/estado", json=estado)
+    r = cliente.post("/api/seguimiento/ABC123/calificar", json={"estrellas": 5, "comentario": "Excelente"})
+    assert r.status_code == 200
+    v = cliente.get("/api/seguimiento/ABC123").get_json()["vehiculo"]
+    assert v["calif"] == 5
+
+
+def test_seguimiento_calificar_invalida(cliente):
+    estado = {"folioNum": 1, "vehiculos": [
+        {"folio": "CW-0001", "codigo": "ABC123", "estado": "Entregado"}],
+        "cierresCaja": [], "salidasCaja": []}
+    cliente.put("/api/estado", json=estado)
+    r = cliente.post("/api/seguimiento/ABC123/calificar", json={"estrellas": 9})
+    assert r.status_code == 400
+
+
+# --- QR ---
+def test_qr_png(cliente):
+    r = cliente.get("/qr/ABC123.png")
+    assert r.status_code == 200
+    assert r.mimetype == "image/png"
+    assert r.data[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+# --- Monitor ---
+def test_monitor_carga(cliente):
+    r = cliente.get("/monitor")
+    assert r.status_code == 200
+    assert b"Monitor" in r.data

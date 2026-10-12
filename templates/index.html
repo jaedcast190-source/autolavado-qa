@@ -181,6 +181,14 @@
   .tec-badge{background:#e0f3f5;color:#105b69;padding:6px 10px;border-radius:20px;font-size:12px;font-weight:700;}
   .tec-job-body{padding:18px;display:grid;gap:12px;}.tec-service{font-size:19px;font-weight:700;}.tec-notes{background:#f1f5f9;border-radius:10px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;}
   .tec-actions{display:flex;gap:10px;flex-wrap:wrap;}.tec-actions button{flex:1;min-height:48px;font-size:15px;}.tec-main{background:#087d8c!important;color:white!important;border:0;}.tec-warning{background:#fff4d8;color:#78500d;padding:10px;border-radius:8px;}
+  .fase-wrap{background:#f0f8fa;border:1px solid #cfe6ea;border-radius:10px;padding:12px;margin:10px 0;}
+  .fase-actual-txt{font-size:14px;color:#105b69;margin-bottom:8px;}
+  .fase-barra{height:10px;background:#d5e8ec;border-radius:20px;overflow:hidden;margin-bottom:10px;}
+  .fase-barra-fill{height:100%;background:linear-gradient(90deg,#0aa2b8,#087d8c);border-radius:20px;transition:width .4s;}
+  .fase-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .fase-chip{font-size:11px;padding:4px 9px;border-radius:20px;background:#e3edef;color:#6a7f84;}
+  .fase-chip.hecha{background:#d7f0dc;color:#2f7a3f;}
+  .fase-chip.actual{background:#087d8c;color:#fff;font-weight:700;}
   .tec-dialog{max-width:520px;max-height:90dvh;overflow:auto;}.tec-empty{grid-column:1/-1;text-align:center;padding:36px;background:white;border:1px dashed #bdcbd8;border-radius:18px;}
   @media(max-width:700px){.topbar{position:relative;flex-wrap:wrap;gap:12px;}.topbar>div:last-child{flex-wrap:wrap;}.tec-grid{grid-template-columns:1fr;}#vistaTecnico{padding:0 12px 28px;}.tec-head{padding:22px;}.vista-nav{padding:0 12px;}.vista-nav button{flex:1;min-height:48px;}.tec-toolbar select{font-size:16px;min-height:48px;}.tec-stats{gap:6px;}.tec-stats>div{padding:10px;}.tec-dialog textarea{font-size:16px;}.queue-item{flex-wrap:wrap;}.modal-bg{padding:10px;}}
 
@@ -204,6 +212,9 @@
   .topbar .btn,.vista-nav .btn{background:#1a2b42;border-color:#304660;color:#e0efff;min-height:44px;}.topbar .btn:hover,.vista-nav .btn:hover{background:#21415b;}
   @media(max-width:900px){.topbar{flex-wrap:wrap;gap:10px;}.topbar>div:last-child{flex-wrap:wrap;}.metrics{grid-template-columns:repeat(3,minmax(0,1fr));}.metric{padding:12px;}}
   @media(max-width:480px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr));}.metrics .metric:last-child{grid-column:1/-1;}}
+  .qr-modal-img{display:flex;justify-content:center;padding:14px;background:#fff;border-radius:12px;}
+  .qr-codigo{text-align:center;font-size:22px;font-weight:800;letter-spacing:3px;margin:10px 0;color:#0C447C;}
+  .qr-help{text-align:center;color:#5F5E5A;font-size:13px;margin-bottom:10px;}
 </style>
 </head>
 <body>
@@ -411,6 +422,7 @@
       <button type="button" id="navServicios" class="admin-nav-btn" onclick="seccionAdmin('Servicios')">Servicios</button>
       <button type="button" id="navPersonal" class="admin-nav-btn" onclick="seccionAdmin('Personal')">Personal</button>
       <button type="button" id="navBahias" class="admin-nav-btn" onclick="seccionAdmin('Bahias')">Bahías</button>
+      <button type="button" id="navFases" class="admin-nav-btn" onclick="seccionAdmin('Fases')">Fases</button>
     </nav>
     <form id="formAdmin" novalidate onsubmit="guardarConfiguracion(event)">
       <div class="admin-body">
@@ -434,6 +446,11 @@
             <div class="admin-section-head"><h2>Bahías</h2><button class="btn btn-primary" type="button" onclick="agregarRecurso('bahias')">＋ Agregar bahía</button></div>
             <p class="admin-help">Configura los espacios de trabajo y los servicios que admiten.</p><div id="adminBahias"></div>
           </section>
+          <section id="panelFases" data-admin-panel="Fases" hidden>
+            <div class="admin-section-head"><h2>Fases del lavado</h2><button class="btn btn-primary" type="button" onclick="agregarFaseAdmin()">＋ Agregar fase</button></div>
+            <p class="admin-help">Las fases son los pasos del lavado (enjabonado, secado…). El técnico las marca una por una, y el cliente ve en vivo en cuál va. El tiempo esperado se usa para la barra de avance.</p>
+            <div id="adminFases"></div>
+          </section>
         </fieldset>
         <p id="adminMensaje" role="status" aria-live="polite"></p>
       </div>
@@ -442,6 +459,19 @@
         <button class="btn btn-primary" id="btnGuardarConfig" type="submit" disabled>Guardar todos los cambios</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalQR" onclick="cerrarQR(event)">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-h"><b>📱 Seguimiento del cliente</b><button class="modal-x" onclick="cerrarQR()" aria-label="Cerrar">✕</button></div>
+    <div style="padding:18px">
+      <p class="qr-help">El cliente escanea este código para ver en vivo el avance de su lavado desde su celular.</p>
+      <div class="qr-modal-img" id="qrImagen"></div>
+      <div class="qr-codigo" id="qrCodigo">—</div>
+      <p class="qr-help" id="qrLink" style="word-break:break-all"></p>
+      <button class="btn btn-primary" style="width:100%" onclick="imprimirQR()">Imprimir código</button>
+    </div>
   </div>
 </div>
 
@@ -459,6 +489,7 @@
   var DURACION = Object.create(null);
   var serviciosAdmin = [];
   var recursosAdmin = {personal:[],bahias:[]};
+  var fasesAdmin = [];
   var registrando = false, guardandoConfig = false, versionAdmin = null;
 
   function aplicarConfiguracion(config){
@@ -681,8 +712,10 @@
     DURACION[lavado] = validacion.minutos;
     folioNum++;
 
+    var codigoSeguimiento = (String(folioNum).padStart(4,"0") + Math.random().toString(36).slice(2,6)).toUpperCase();
     vehiculos.push({
       folio: "CW-" + String(folioNum).padStart(4,"0"),
+      codigo: codigoSeguimiento,
       hora: ahora(),
       horaCita: document.getElementById("inHora").value || "—",
       fechaCita: document.getElementById("inFecha").value || fechaLocalISO(),
@@ -757,6 +790,37 @@
       selector.value=ids.includes(previo) ? previo : "";
     });
   }
+  // --- Fases del lavado (lado operación) ---
+  function fasesActivas(){
+    return (CONFIG.fases || []).filter(function(f){return f.activo !== false;});
+  }
+  function faseDe(v){
+    // Devuelve {indice, nombre, total} de la fase actual del vehículo.
+    var fases = fasesActivas();
+    if(!fases.length) return null;
+    var idx = typeof v.faseActual === "number" ? v.faseActual : 0;
+    idx = Math.max(0, Math.min(idx, fases.length - 1));
+    return {indice: idx, nombre: fases[idx].nombre, total: fases.length, fase: fases[idx]};
+  }
+  function avanzarFase(i){
+    var v = vehiculos[i];
+    if(!v || !asignadoTecnico(v) || v.estado !== "En proceso" || v.pausaInicio) return;
+    var fases = fasesActivas();
+    var idx = typeof v.faseActual === "number" ? v.faseActual : 0;
+    var anterior = JSON.parse(JSON.stringify(v));
+    if(idx < fases.length - 1){
+      v.faseActual = idx + 1;
+      if(!Array.isArray(v.faseInicios)) v.faseInicios = [];
+      v.faseInicios[v.faseActual] = new Date().toISOString();
+      if(!guardarDatos()){vehiculos[i] = anterior; return;}
+      render();
+      mostrarToast("Fase: " + fases[v.faseActual].nombre);
+    } else {
+      // Última fase -> terminar el servicio.
+      cambiarEstado(i);
+    }
+  }
+
   function asignacionCompatible(v){
     return [["personal",v.responsableId,v.resp],["bahias",v.bahiaId,v.bahia]].every(function(par){
       var cat=catalogoRecurso(par[0]);
@@ -906,8 +970,27 @@
     document.getElementById("tecnicoTrabajos").innerHTML=trabajos.length ? trabajos.map(function(x){
       var v=x.v,i=x.i,activo=v.estado === "En proceso",espera=v.estado === "Espera";
       var minutos=v.inicioReal ? Math.max(0,Math.floor(((v.pausaInicio ? new Date(v.pausaInicio).getTime() : Date.now())-new Date(v.inicioReal).getTime()-(v.pausaAcumuladaMs || 0))/60000)) : null;
-      var acciones=espera ? (v.presente ? '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;iniciar&quot;)">Iniciar trabajo</button>' : '<p class="tec-warning">Recepción debe confirmar la llegada.</p>') : activo ? (v.pausaInicio ? '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;reanudar&quot;)">Reanudar trabajo</button>' : '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;terminar&quot;)">Terminar trabajo</button><button class="btn" onclick="abrirAccionTecnico('+i+',&quot;pausa&quot;)">Pausar</button>') : '<p>Trabajo terminado. Recepción realiza la entrega.</p>';
-      return '<article class="tec-job"><div class="tec-job-header"><div><h2>'+escaparHTML(v.placa || v.sub || 'Sin placa')+'</h2><small>'+escaparHTML(v.folio)+' · '+escaparHTML(v.bahia)+'</small></div><span class="tec-badge">'+escaparHTML(v.pausaInicio ? 'Pausado' : v.estado)+'</span></div><div class="tec-job-body"><div class="tec-service">'+escaparHTML(v.lavado)+'</div><p>Cita '+escaparHTML(v.horaCita || '—')+' · Estimación '+escaparHTML(v.entrega || '—')+'</p>'+(minutos !== null ? '<p>Tiempo trabajado: '+minutos+' min</p>' : '')+'<p>'+escaparHTML(detalleVehiculo(v))+'</p><div class="tec-notes">'+escaparHTML(inspeccionVehiculo(v))+'</div><div class="tec-notes">'+escaparHTML(v.notas || 'Sin instrucciones adicionales')+'</div>'+(v.pausaInicio ? '<p class="tec-warning">Pausa: '+escaparHTML(v.motivoPausa)+'</p>' : '')+'<div class="tec-actions">'+acciones+'</div>'+(activo ? '<button class="btn" onclick="abrirAccionTecnico('+i+',&quot;incidencia&quot;)">Reportar incidencia</button>' : '')+(v.incidencias || []).map(function(n){return '<p class="tec-warning">'+escaparHTML(horaReal(n.fecha))+' · '+escaparHTML(n.motivo)+'</p>';}).join('')+'</div></article>';
+
+      // Bloque de fases (solo mientras está en proceso)
+      var bloqueFase = "", botonFase = "";
+      if(activo && !v.pausaInicio){
+        var f = faseDe(v);
+        if(f){
+          var esUltima = f.indice >= f.total - 1;
+          var chips = fasesActivas().map(function(fa,k){
+            var clase = k < f.indice ? "fase-chip hecha" : (k === f.indice ? "fase-chip actual" : "fase-chip");
+            return '<span class="'+clase+'">'+escaparHTML(fa.nombre)+'</span>';
+          }).join('');
+          var pct = Math.round(((f.indice+1)/f.total)*100);
+          bloqueFase = '<div class="fase-wrap"><div class="fase-actual-txt">Fase '+(f.indice+1)+' de '+f.total+': <b>'+escaparHTML(f.nombre)+'</b></div>'
+            + '<div class="fase-barra"><div class="fase-barra-fill" style="width:'+pct+'%"></div></div>'
+            + '<div class="fase-chips">'+chips+'</div></div>';
+          botonFase = '<button class="btn tec-main" onclick="avanzarFase('+i+')">'+(esUltima ? 'Terminar lavado ✓' : 'Siguiente fase →')+'</button>';
+        }
+      }
+
+      var acciones=espera ? (v.presente ? '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;iniciar&quot;)">Iniciar trabajo</button>' : '<p class="tec-warning">Recepción debe confirmar la llegada.</p>') : activo ? (v.pausaInicio ? '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;reanudar&quot;)">Reanudar trabajo</button>' : botonFase + '<button class="btn" onclick="abrirAccionTecnico('+i+',&quot;pausa&quot;)">Pausar</button>') : '<p>Trabajo terminado. Recepción realiza la entrega.</p>';
+      return '<article class="tec-job"><div class="tec-job-header"><div><h2>'+escaparHTML(v.placa || v.sub || 'Sin placa')+'</h2><small>'+escaparHTML(v.folio)+' · '+escaparHTML(v.bahia)+'</small></div><span class="tec-badge">'+escaparHTML(v.pausaInicio ? 'Pausado' : v.estado)+'</span></div><div class="tec-job-body"><div class="tec-service">'+escaparHTML(v.lavado)+'</div><p>Cita '+escaparHTML(v.horaCita || '—')+' · Estimación '+escaparHTML(v.entrega || '—')+'</p>'+(minutos !== null ? '<p>Tiempo trabajado: '+minutos+' min</p>' : '')+bloqueFase+'<p>'+escaparHTML(detalleVehiculo(v))+'</p><div class="tec-notes">'+escaparHTML(inspeccionVehiculo(v))+'</div><div class="tec-notes">'+escaparHTML(v.notas || 'Sin instrucciones adicionales')+'</div>'+(v.pausaInicio ? '<p class="tec-warning">Pausa: '+escaparHTML(v.motivoPausa)+'</p>' : '')+'<div class="tec-actions">'+acciones+'</div>'+(activo ? '<button class="btn" onclick="abrirAccionTecnico('+i+',&quot;incidencia&quot;)">Reportar incidencia</button>' : '')+(v.incidencias || []).map(function(n){return '<p class="tec-warning">'+escaparHTML(horaReal(n.fecha))+' · '+escaparHTML(n.motivo)+'</p>';}).join('')+'</div></article>';
     }).join('') : '<div class="tec-empty">'+(seleccion ? 'No tienes trabajos pendientes en esta cola.' : 'Selecciona tu nombre para ver los trabajos asignados.')+'</div>';
   }
   async function accionTrabajo(i,accion){
@@ -985,6 +1068,9 @@
       var finEstimado = new Date(momento.getTime() + minutos*60000);
       v.finEstimado = finEstimado.toISOString();
       v.entrega = horaReal(v.finEstimado);
+      // Inicia en la primera fase del lavado.
+      v.faseActual = 0;
+      v.faseInicios = [momento.toISOString()];
     }
     if(actual === "En proceso" && v.pausaInicio){mostrarToast("Reanuda el servicio antes de terminar."); return;}
     if(actual === "En proceso") v.finReal = momento.toISOString();
@@ -1043,6 +1129,7 @@
         + '<span>'+escaparHTML(v.estado)+(v.estado === "Espera" ? (v.presente ? ' · Presente' : ' · Pendiente de llegada') : '')+'</span>'
         + '<button class="state '+escaparHTML(STCLASS[v.estado])+'" '+(v.estado === "Entregado" ? 'disabled' : '')+' onclick="'+(v.estado === "Espera" && !v.presente ? 'marcarLlegada' : v.estado === 'Espera' ? 'iniciarServicio' : 'cambiarEstado')+'('+i+')">'+accion+'</button>'
         + '<div class="qi-meta">'+pagoTxt+' '+estrellas+'</div>'
+        + (v.codigo ? '<div class="qi-meta"><button class="btn-calif" onclick="mostrarQR('+i+')">📱 Código QR cliente</button></div>' : '')
         + '</div></div>';
     }
     cont.innerHTML = html;
@@ -1190,8 +1277,39 @@
     document.getElementById("modalCal").classList.remove("show");
   }
 
+  // --- Código QR de seguimiento para el cliente ---
+  var qrActual = null;
+  function urlSeguimiento(codigo){
+    return window.location.origin + "/seguimiento/" + encodeURIComponent(codigo);
+  }
+  function mostrarQR(i){
+    var v = vehiculos[i];
+    if(!v || !v.codigo){ mostrarToast("Este registro no tiene código de seguimiento."); return; }
+    var url = urlSeguimiento(v.codigo);
+    document.getElementById("qrCodigo").textContent = v.codigo;
+    document.getElementById("qrLink").textContent = url;
+    var cont = document.getElementById("qrImagen");
+    // El QR lo genera el servidor (funciona sin internet del cliente).
+    cont.innerHTML = '<img src="/qr/'+encodeURIComponent(v.codigo)+'.png" alt="Código QR" width="220" height="220" style="image-rendering:pixelated">';
+    document.getElementById("modalQR").classList.add("show");
+  }
+  function cerrarQR(e){
+    if(e && e.target !== e.currentTarget) return;
+    document.getElementById("modalQR").classList.remove("show");
+  }
+  function imprimirQR(){
+    var codigo = document.getElementById("qrCodigo").textContent;
+    var url = document.getElementById("qrLink").textContent;
+    var imgUrl = "/qr/"+encodeURIComponent(codigo)+".png";
+    var w = window.open("", "_blank");
+    if(!w){ mostrarToast("Permite las ventanas emergentes para imprimir."); return; }
+    w.document.write('<html><head><title>QR '+codigo+'</title><style>body{font-family:sans-serif;text-align:center;padding:40px;}h1{font-size:20px;}img{width:260px;height:260px;image-rendering:pixelated;}.cod{font-size:28px;font-weight:800;letter-spacing:4px;margin:14px 0;}.u{font-size:12px;color:#555;word-break:break-all;}</style></head><body><h1>Sigue tu lavado en vivo</h1><img src="'+imgUrl+'"><div class="cod">'+codigo+'</div><p>Escanea el código o entra a:</p><p class="u">'+url+'</p></body></html>');
+    w.document.close();
+    setTimeout(function(){ w.print(); }, 600);
+  }
+
   function seccionAdmin(nombre){
-    ["Negocio","Servicios","Personal","Bahias"].forEach(function(n){
+    ["Negocio","Servicios","Personal","Bahias","Fases"].forEach(function(n){
       document.getElementById("panel"+n).hidden = n !== nombre;
       var boton=document.getElementById("nav"+n);
       if(boton.setAttribute) boton.setAttribute("aria-current",n === nombre ? "page" : "false");
@@ -1213,6 +1331,8 @@
       renderServiciosAdmin();
       ["personal","bahias"].forEach(function(campo){recursosAdmin[campo]=Object.entries(config[campo] || {}).map(function(par){return {id:par[0],...par[1]};});});
       renderRecursosAdmin();
+      fasesAdmin = (config.fases || []).map(function(f){return {id:f.id, nombre:f.nombre, minutos:f.minutos, activo:f.activo !== false};});
+      renderFasesAdmin();
       document.getElementById("adminMensaje").textContent = "";
       document.getElementById("adminCampos").disabled = false;
       document.getElementById("btnGuardarConfig").disabled = false;
@@ -1282,6 +1402,52 @@
     renderRecursosAdmin();
   }
 
+  // --- Fases del lavado (administrables) ---
+  function capturarFasesAdmin(){
+    fasesAdmin = fasesAdmin.map(function(f,i){
+      return {
+        id: f.id,
+        nombre: document.getElementById("faseNombre"+i).value,
+        minutos: document.getElementById("faseMinutos"+i).value,
+        activo: document.getElementById("faseActivo"+i).checked
+      };
+    });
+  }
+  function renderFasesAdmin(){
+    document.getElementById("adminFases").innerHTML = fasesAdmin.map(function(f,i){
+      var ultimo = i === fasesAdmin.length - 1;
+      return '<details class="admin-card" '+(!f.nombre ? 'open' : '')+'><summary>'+(i+1)+'. '+escaparHTML(f.nombre || 'Nueva fase')+' · '+escaparHTML(String(f.minutos))+' min</summary><div class="admin-card-body">'
+        + '<div class="field"><label for="faseNombre'+i+'">Nombre de la fase</label><input id="faseNombre'+i+'" maxlength="40" required value="'+escaparHTML(f.nombre)+'"></div>'
+        + '<div class="field"><label for="faseMinutos'+i+'">Tiempo esperado (minutos)</label><input id="faseMinutos'+i+'" type="number" min="1" max="240" value="'+escaparHTML(String(f.minutos))+'"></div>'
+        + '<label><input type="checkbox" id="faseActivo'+i+'" '+(f.activo ? 'checked' : '')+'> Fase activa</label>'
+        + '<div class="tec-actions" style="margin-top:10px">'
+        +   (i > 0 ? '<button class="btn" type="button" onclick="moverFase('+i+',-1)">↑ Subir</button>' : '')
+        +   (!ultimo ? '<button class="btn" type="button" onclick="moverFase('+i+',1)">↓ Bajar</button>' : '')
+        +   '<button class="btn" type="button" onclick="eliminarFase('+i+')">Eliminar</button>'
+        + '</div></div></details>';
+    }).join('') || '<p class="admin-help">No hay fases. Agrega al menos una.</p>';
+  }
+  function agregarFaseAdmin(){
+    capturarFasesAdmin();
+    fasesAdmin.push({id:'f_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), nombre:'', minutos:5, activo:true});
+    renderFasesAdmin();
+    var campo=document.getElementById("faseNombre"+(fasesAdmin.length-1));
+    if(campo) campo.focus();
+  }
+  function moverFase(i,dir){
+    capturarFasesAdmin();
+    var j=i+dir;
+    if(j<0 || j>=fasesAdmin.length) return;
+    var tmp=fasesAdmin[i]; fasesAdmin[i]=fasesAdmin[j]; fasesAdmin[j]=tmp;
+    renderFasesAdmin();
+  }
+  function eliminarFase(i){
+    capturarFasesAdmin();
+    if(fasesAdmin.length<=1){ mostrarToast("Debe quedar al menos una fase."); return; }
+    fasesAdmin.splice(i,1);
+    renderFasesAdmin();
+  }
+
   async function guardarConfiguracion(event){
     event.preventDefault();
     var formulario=document.getElementById("formAdmin");
@@ -1318,6 +1484,10 @@
     }
     capturarRecursos();
     ["personal","bahias"].forEach(function(campo){data[campo]=Object.fromEntries(recursosAdmin[campo].map(function(r){return [r.id,{nombre:r.nombre,activo:r.activo,servicios:r.servicios === null ? null : r.servicios.map(function(n){var servicio=serviciosAdmin.find(function(s){return s.original === n;}); return servicio ? servicio.nombre.trim() : n;})}];}));});
+    capturarFasesAdmin();
+    var fasesValidas = fasesAdmin.filter(function(f){return String(f.nombre).trim();});
+    if(!fasesValidas.length){document.getElementById("adminMensaje").textContent="Debe existir al menos una fase con nombre."; seccionAdmin("Fases"); return;}
+    data.fases = fasesValidas.map(function(f){return {id:f.id, nombre:String(f.nombre).trim(), minutos:Math.max(1,parseInt(f.minutos,10)||5), activo:f.activo !== false};});
     guardandoConfig = true;
     document.getElementById("btnGuardarConfig").disabled = true;
     document.getElementById("adminCampos").disabled = true;

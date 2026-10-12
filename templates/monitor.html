@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ configuracion.nombre_negocio }} — Monitor de lavado</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#0a0e14; --panel:#121923; --borde:#1f2a38; --tinta:#e8eef4;
+    --suave:#7c8a99; --azul:#19b6cf; --verde:#2fd27e; --ambar:#f4b740;
+  }
+  html,body{height:100%;}
+  body{background:var(--bg);color:var(--tinta);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden;}
+  .barra-top{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--borde);background:#0d131b;}
+  .barra-top h1{font-size:17px;font-weight:600;letter-spacing:.3px;}
+  .barra-top h1 small{color:var(--suave);font-weight:400;margin-left:8px;}
+  .reloj{font-size:18px;font-variant-numeric:tabular-nums;color:var(--azul);font-weight:600;}
+  /* Rejilla que se adapta al número de autos */
+  #grid{height:calc(100vh - 56px);display:grid;gap:12px;padding:12px;}
+  #grid.g1{grid-template-columns:1fr;grid-template-rows:1fr;}
+  #grid.g2{grid-template-columns:1fr 1fr;grid-template-rows:1fr;}
+  #grid.g3{grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr;}
+  #grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
+  @media(max-width:800px){
+    #grid.g2,#grid.g3,#grid.g4{grid-template-columns:1fr;grid-template-rows:none;grid-auto-rows:minmax(220px,1fr);height:auto;overflow-y:auto;}
+    body{overflow:auto;}
+  }
+  .panel{background:var(--panel);border:1px solid var(--borde);border-radius:16px;padding:22px;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+  .panel.pausado{border-color:var(--ambar);}
+  .p-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  .placa{font-size:clamp(26px,4vw,46px);font-weight:800;letter-spacing:1px;line-height:1;}
+  .sub{color:var(--suave);font-size:14px;margin-top:6px;}
+  .bahia-tag{background:#16212e;border:1px solid var(--borde);color:var(--azul);font-size:13px;font-weight:700;padding:6px 12px;border-radius:20px;white-space:nowrap;}
+  .servicio{display:inline-block;background:#13202b;color:var(--azul);font-size:13px;padding:4px 11px;border-radius:20px;margin-top:4px;}
+  .fase-nombre{font-size:clamp(20px,3vw,34px);font-weight:700;margin:auto 0 6px;}
+  .fase-meta{color:var(--suave);font-size:14px;margin-bottom:12px;}
+  .barra{height:14px;background:#1b2735;border-radius:20px;overflow:hidden;margin-bottom:10px;}
+  .barra-fill{height:100%;background:linear-gradient(90deg,var(--azul),var(--verde));border-radius:20px;transition:width .6s;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{font-size:12px;padding:4px 10px;border-radius:20px;background:#1a2533;color:var(--suave);}
+  .chip.hecha{background:#15321f;color:var(--verde);}
+  .chip.actual{background:var(--azul);color:#04222a;font-weight:800;}
+  .tiempo{position:absolute;bottom:18px;right:22px;font-size:14px;color:var(--suave);font-variant-numeric:tabular-nums;}
+  .pausa-flag{position:absolute;top:0;left:0;right:0;background:var(--ambar);color:#3a2a00;text-align:center;font-weight:700;font-size:13px;padding:4px;}
+  .vacio{height:calc(100vh - 56px);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--suave);gap:12px;text-align:center;padding:20px;}
+  .vacio .icono{font-size:54px;opacity:.5;}
+  .vacio h2{font-weight:600;font-size:20px;color:var(--tinta);}
+</style>
+</head>
+<body>
+  <div class="barra-top">
+    <h1><b id="negocio">{{ configuracion.nombre_negocio }}</b><small>Monitor de lavado en vivo</small></h1>
+    <div class="reloj" id="reloj">--:--</div>
+  </div>
+  <div id="grid" class="g1"></div>
+
+<script>
+  "use strict";
+  var CONFIG = {};
+  var vehiculos = [];
+
+  function escapar(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+  function fasesActivas(){ return (CONFIG.fases||[]).filter(function(f){return f.activo!==false;}); }
+
+  function minutosDesde(iso){
+    if(!iso) return 0;
+    var t=new Date(iso).getTime();
+    if(isNaN(t)) return 0;
+    return Math.max(0, Math.floor((Date.now()-t)/60000));
+  }
+
+  async function cargar(){
+    try{
+      var rc = await fetch("/api/config",{cache:"no-store"});
+      if(rc.ok) CONFIG = await rc.json();
+      var re = await fetch("/api/estado",{cache:"no-store"});
+      if(re.ok){ var d = await re.json(); vehiculos = (d.estado && d.estado.vehiculos) || []; }
+      document.getElementById("negocio").textContent = CONFIG.nombre_negocio || "Autolavado";
+      pintar();
+    }catch(e){ /* reintenta en el próximo ciclo */ }
+  }
+
+  function pintar(){
+    var fases = fasesActivas();
+    // Solo autos en proceso (máximo 4 por diseño del negocio)
+    var activos = vehiculos.filter(function(v){return v.estado==="En proceso";}).slice(0,4);
+    var grid = document.getElementById("grid");
+
+    if(!activos.length){
+      grid.className = "";
+      grid.innerHTML = '<div class="vacio"><div class="icono">🚿</div><h2>Sin autos en lavado ahora mismo</h2><p>Cuando un técnico inicie un servicio, aparecerá aquí su avance en vivo.</p></div>';
+      return;
+    }
+
+    grid.className = "g" + activos.length;
+    grid.innerHTML = activos.map(function(v){
+      var idx = typeof v.faseActual==="number" ? v.faseActual : 0;
+      idx = Math.max(0, Math.min(idx, Math.max(0,fases.length-1)));
+      var faseNom = fases[idx] ? fases[idx].nombre : "En proceso";
+      var pct = fases.length ? Math.round(((idx+1)/fases.length)*100) : 0;
+      var chips = fases.map(function(f,k){
+        var c = k<idx ? "chip hecha" : (k===idx ? "chip actual" : "chip");
+        return '<span class="'+c+'">'+escapar(f.nombre)+'</span>';
+      }).join("");
+      var pausado = !!v.pausaInicio;
+      var trabajado = v.inicioReal ? minutosDesde(v.pausaInicio || v.inicioReal) : 0;
+      var tiempoTxt = v.inicioReal ? ("Lleva "+minutosDesde(v.inicioReal)+" min") : "";
+      return '<div class="panel'+(pausado?' pausado':'')+'">'
+        + (pausado ? '<div class="pausa-flag">⏸ PAUSADO · '+escapar(v.motivoPausa||"")+'</div>' : '')
+        + '<div class="p-top"><div><div class="placa">'+escapar(v.placa||v.sub||"—")+'</div>'
+        +   '<div class="sub">'+escapar(v.resp||"")+(v.nombre?' · '+escapar(v.nombre):'')+'</div>'
+        +   '<span class="servicio">'+escapar(v.lavado||"")+'</span></div>'
+        +   '<span class="bahia-tag">'+escapar(v.bahia||"")+'</span></div>'
+        + '<div class="fase-nombre">'+escapar(faseNom)+'</div>'
+        + '<div class="fase-meta">Fase '+(idx+1)+' de '+fases.length+'</div>'
+        + '<div class="barra"><div class="barra-fill" style="width:'+pct+'%"></div></div>'
+        + '<div class="chips">'+chips+'</div>'
+        + '<div class="tiempo">'+escapar(tiempoTxt)+'</div>'
+        + '</div>';
+    }).join("");
+  }
+
+  function tictac(){
+    var d=new Date();
+    document.getElementById("reloj").textContent =
+      String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0");
+  }
+
+  cargar();
+  tictac();
+  setInterval(tictac, 1000);
+  setInterval(cargar, 8000);   // refresca datos cada 8 segundos
+</script>
+</body>
+</html>

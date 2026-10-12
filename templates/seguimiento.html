@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguimiento de tu lavado</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--azul:#087d8c;--azul2:#0aa2b8;--verde:#2f9e52;--bg:#eef4f6;--tinta:#1a2a31;--suave:#6a7f84;--borde:#d6e3e6;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tinta);-webkit-font-smoothing:antialiased;min-height:100vh;}
+  .wrap{max-width:460px;margin:0 auto;padding:22px 18px 40px;}
+  .marca{text-align:center;margin-bottom:18px;}
+  .marca .logo{width:56px;height:56px;border-radius:15px;background:linear-gradient(135deg,var(--azul2),var(--azul));display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 10px;}
+  .marca h1{font-size:18px;font-weight:700;}
+  .marca p{font-size:13px;color:var(--suave);}
+  .card{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  .placa{font-size:30px;font-weight:800;letter-spacing:1px;text-align:center;}
+  .folio{text-align:center;color:var(--suave);font-size:13px;margin-top:2px;}
+  .estado-grande{text-align:center;margin:16px 0;}
+  .estado-grande .fase{font-size:26px;font-weight:800;color:var(--azul);}
+  .estado-grande .meta{color:var(--suave);font-size:14px;margin-top:4px;}
+  .barra{height:14px;background:#dcebee;border-radius:20px;overflow:hidden;margin:14px 0;}
+  .barra-fill{height:100%;background:linear-gradient(90deg,var(--azul2),var(--verde));border-radius:20px;transition:width .6s;}
+  .pasos{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .paso{display:flex;align-items:center;gap:10px;font-size:14px;}
+  .paso .bolita{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;background:#e3edef;color:var(--suave);}
+  .paso.hecha .bolita{background:var(--verde);color:#fff;}
+  .paso.actual .bolita{background:var(--azul);color:#fff;}
+  .paso.actual{font-weight:700;color:var(--azul);}
+  .detalle{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef3f4;font-size:14px;}
+  .detalle:last-child{border-bottom:0;}
+  .detalle .lbl{color:var(--suave);}
+  .detalle .val{font-weight:600;}
+  .aviso{background:#fff4d8;color:#78500d;border-radius:10px;padding:12px;font-size:14px;text-align:center;margin-top:10px;}
+  .listo-box{text-align:center;padding:6px;}
+  .listo-box .check{font-size:46px;}
+  .listo-box h2{font-size:20px;margin:6px 0;}
+  .estrellas{display:flex;justify-content:center;gap:8px;margin:14px 0;}
+  .estrella{font-size:38px;color:#d3d8da;cursor:pointer;transition:transform .1s;}
+  .estrella:hover{transform:scale(1.15);}
+  .estrella.on{color:#f0a818;}
+  textarea{width:100%;border:1px solid var(--borde);border-radius:10px;padding:10px;font-family:inherit;font-size:14px;resize:vertical;min-height:60px;}
+  .btn{width:100%;background:var(--azul);color:#fff;border:0;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;font-family:inherit;}
+  .btn:disabled{opacity:.5;}
+  .cargando,.error{text-align:center;color:var(--suave);padding:40px 20px;}
+  .gracias{text-align:center;color:var(--verde);font-weight:600;padding:14px;}
+  .foot{text-align:center;font-size:11px;color:var(--suave);margin-top:20px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="marca">
+    <div class="logo">🚿</div>
+    <h1 id="negocio">{{ configuracion.nombre_negocio }}</h1>
+    <p>Seguimiento de tu servicio</p>
+  </div>
+  <div id="contenido"><div class="cargando">Cargando tu servicio…</div></div>
+  <div class="foot">Esta página se actualiza sola. Puedes dejarla abierta.</div>
+</div>
+
+<script>
+  "use strict";
+  var CODIGO = {{ codigo|tojson }};
+  var yaCalifico = false;
+  var estrellaSel = 0;
+
+  function escapar(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+  async function cargar(){
+    try{
+      var r = await fetch("/api/seguimiento/"+encodeURIComponent(CODIGO),{cache:"no-store"});
+      if(r.status === 404){ mostrarError("No encontramos un servicio con este código. Verifica el enlace o el QR."); return; }
+      var d = await r.json();
+      if(!d.ok){ mostrarError(d.error || "No se pudo cargar."); return; }
+      pintar(d.vehiculo);
+    }catch(e){ /* reintenta al próximo ciclo */ }
+  }
+
+  function mostrarError(msg){
+    document.getElementById("contenido").innerHTML = '<div class="card"><div class="error">⚠️<br>'+escapar(msg)+'</div></div>';
+  }
+
+  function pintar(v){
+    document.getElementById("negocio").textContent = v.negocio || "Autolavado";
+    var fases = v.fases || [];
+    var cont = document.getElementById("contenido");
+
+    if(v.estado === "Entregado"){
+      cont.innerHTML = tarjetaEntregado(v);
+      return;
+    }
+
+    var html = '<div class="card">'
+      + '<div class="placa">'+escapar(v.placa || "Tu vehículo")+'</div>'
+      + '<div class="folio">'+escapar(v.folio || "")+'</div>';
+
+    if(v.estado === "Espera"){
+      html += '<div class="aviso">Tu vehículo está en espera. En breve comenzamos.</div>';
+    } else if(v.estado === "Listo"){
+      html += '<div class="estado-grande"><div class="fase">¡Listo! ✓</div><div class="meta">Tu vehículo está terminado. Puedes pasar por él.</div></div>';
+    } else if(v.estado === "En proceso"){
+      var idx = typeof v.faseActual === "number" ? v.faseActual : 0;
+      if(fases.length) idx = Math.max(0, Math.min(idx, fases.length-1));
+      var faseNom = fases[idx] ? fases[idx].nombre : "En proceso";
+      var pct = fases.length ? Math.round(((idx+1)/fases.length)*100) : 0;
+      html += '<div class="estado-grande"><div class="fase">'+escapar(faseNom)+'</div><div class="meta">Paso '+(idx+1)+' de '+fases.length+'</div></div>';
+      if(v.pausado) html += '<div class="aviso">⏸ El servicio está pausado momentáneamente.</div>';
+      html += '<div class="barra"><div class="barra-fill" style="width:'+pct+'%"></div></div>';
+      html += '<div class="pasos">'+fases.map(function(f,k){
+        var c = k<idx ? "paso hecha" : (k===idx ? "paso actual" : "paso");
+        var ic = k<idx ? "✓" : (k+1);
+        return '<div class="'+c+'"><span class="bolita">'+ic+'</span>'+escapar(f.nombre)+'</div>';
+      }).join('')+'</div>';
+    }
+    html += '</div>';
+
+    // Detalle del servicio
+    html += '<div class="card">'
+      + fila("Servicio", v.lavado)
+      + (v.precio != null ? fila("Precio", "$"+v.precio) : "")
+      + fila("Bahía", v.bahia)
+      + fila("Atiende", v.resp)
+      + (v.entrega ? fila("Entrega estimada", v.entrega + " hrs") : "")
+      + '</div>';
+
+    cont.innerHTML = html;
+  }
+
+  function fila(lbl,val){
+    if(!val) return "";
+    return '<div class="detalle"><span class="lbl">'+escapar(lbl)+'</span><span class="val">'+escapar(val)+'</span></div>';
+  }
+
+  function tarjetaEntregado(v){
+    if(v.calif > 0 || yaCalifico){
+      return '<div class="card"><div class="listo-box"><div class="check">🎉</div><h2>¡Servicio entregado!</h2><p style="color:var(--suave)">Gracias por tu preferencia.</p></div>'
+        + (v.calif > 0 ? '<div class="gracias">Tu calificación: '+"★".repeat(v.calif)+'</div>' : '<div class="gracias">¡Gracias por calificar!</div>')
+        + '</div>';
+    }
+    // Pedir calificación
+    return '<div class="card"><div class="listo-box"><div class="check">🎉</div><h2>¡Tu vehículo está listo!</h2><p style="color:var(--suave)">¿Cómo quedó tu servicio?</p></div>'
+      + '<div class="estrellas" id="estrellas">'
+      +   [1,2,3,4,5].map(function(n){return '<span class="estrella" data-n="'+n+'" onclick="setEstrella('+n+')">★</span>';}).join('')
+      + '</div>'
+      + '<textarea id="comentario" placeholder="Comentario (opcional)"></textarea>'
+      + '<button class="btn" id="btnCalif" onclick="enviarCalif()" disabled>Enviar calificación</button>'
+      + '</div>';
+  }
+
+  function setEstrella(n){
+    estrellaSel = n;
+    document.querySelectorAll("#estrellas .estrella").forEach(function(e){
+      e.classList.toggle("on", Number(e.dataset.n) <= n);
+    });
+    document.getElementById("btnCalif").disabled = false;
+  }
+
+  async function enviarCalif(){
+    if(estrellaSel < 1) return;
+    document.getElementById("btnCalif").disabled = true;
+    try{
+      var r = await fetch("/api/seguimiento/"+encodeURIComponent(CODIGO)+"/calificar",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({estrellas:estrellaSel, comentario:(document.getElementById("comentario").value||"")})
+      });
+      var d = await r.json();
+      if(d.ok){ yaCalifico = true; cargar(); }
+      else { document.getElementById("btnCalif").disabled = false; }
+    }catch(e){ document.getElementById("btnCalif").disabled = false; }
+  }
+
+  cargar();
+  setInterval(cargar, 10000);  // refresca cada 10 s
+</script>
+</body>
+</html>

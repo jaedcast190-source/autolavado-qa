@@ -97,6 +97,99 @@ def favicon():
     return ("", 204)
 
 
+@app.get("/monitor")
+def monitor():
+    config = db.leer_configuracion() or db.CONFIG_POR_DEFECTO
+    return render_template("monitor.html", configuracion=config)
+
+
+@app.get("/qr/<codigo>.png")
+def qr_png(codigo):
+    """Genera el QR del lado del servidor (sin depender de internet del cliente).
+    El QR apunta a la página pública de seguimiento de ese código."""
+    import io
+    import qrcode
+    from flask import Response
+    url = request.url_root.rstrip("/") + "/seguimiento/" + (codigo or "")
+    img = qrcode.make(url, box_size=8, border=2)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return Response(buf.getvalue(), mimetype="image/png",
+                    headers={"Cache-Control": "no-store"})
+
+
+@app.get("/seguimiento/<codigo>")
+def seguimiento(codigo):
+    """Página pública que ve el cliente al escanear su QR."""
+    config = db.leer_configuracion() or db.CONFIG_POR_DEFECTO
+    return render_template("seguimiento.html", configuracion=config, codigo=codigo)
+
+
+@app.get("/api/seguimiento/<codigo>")
+def api_seguimiento(codigo):
+    """Devuelve SOLO los datos del vehículo con ese código. No expone el resto."""
+    estado = db.leer_estado() or {}
+    config = db.leer_configuracion() or db.CONFIG_POR_DEFECTO
+    codigo = (codigo or "").strip().upper()
+    vehiculo = None
+    for v in estado.get("vehiculos", []):
+        if str(v.get("codigo", "")).strip().upper() == codigo and codigo:
+            vehiculo = v
+            break
+    if not vehiculo:
+        return jsonify(ok=False, error="No encontramos un servicio con ese código."), 404
+
+    fases = [f for f in config.get("fases", []) if f.get("activo", True)]
+    saldo_pesos = None  # el cliente no necesita el detalle de cobros aquí
+    # Datos mínimos y seguros para el cliente
+    publico = {
+        "folio": vehiculo.get("folio"),
+        "placa": vehiculo.get("placa"),
+        "nombre": vehiculo.get("nombre"),
+        "lavado": vehiculo.get("lavado"),
+        "precio": vehiculo.get("precio"),
+        "bahia": vehiculo.get("bahia"),
+        "resp": vehiculo.get("resp"),
+        "estado": vehiculo.get("estado"),
+        "entrega": vehiculo.get("entrega"),
+        "faseActual": vehiculo.get("faseActual", 0),
+        "pausado": bool(vehiculo.get("pausaInicio")),
+        "calif": vehiculo.get("calif", 0),
+        "negocio": config.get("nombre_negocio", "Autolavado"),
+        "fases": [{"nombre": f["nombre"]} for f in fases],
+    }
+    return jsonify(ok=True, vehiculo=publico)
+
+
+@app.post("/api/seguimiento/<codigo>/calificar")
+def api_seguimiento_calificar(codigo):
+    """Permite al cliente calificar su servicio desde la página pública."""
+    data = request.get_json(silent=True) or {}
+    try:
+        estrellas = int(data.get("estrellas", 0))
+    except (TypeError, ValueError):
+        estrellas = 0
+    if estrellas < 1 or estrellas > 5:
+        return jsonify(ok=False, error="Calificación inválida"), 400
+
+    estado = db.leer_estado() or {}
+    codigo = (codigo or "").strip().upper()
+    encontrado = False
+    for v in estado.get("vehiculos", []):
+        if str(v.get("codigo", "")).strip().upper() == codigo and codigo:
+            v["calif"] = estrellas
+            comentario = str(data.get("comentario", ""))[:300].strip()
+            if comentario:
+                v["comentarioCliente"] = comentario
+            encontrado = True
+            break
+    if not encontrado:
+        return jsonify(ok=False, error="No encontramos ese servicio."), 404
+    db.guardar_estado(estado)
+    return jsonify(ok=True)
+
+
 @app.get("/health")
 def health():
     motor = "postgres" if db.USA_POSTGRES else "sqlite"
@@ -130,6 +223,26 @@ def api_guardar_config():
         actual["bahias"] = data["bahias"]
     if isinstance(data.get("tipos_vehiculo"), dict):
         actual["tipos_vehiculo"] = data["tipos_vehiculo"]
+    if isinstance(data.get("fases"), list):
+        fases_limpias = []
+        for i, f in enumerate(data["fases"]):
+            if not isinstance(f, dict):
+                continue
+            nombre = str(f.get("nombre", "")).strip()[:40]
+            if not nombre:
+                continue
+            try:
+                minutos = max(1, int(f.get("minutos", 5)))
+            except (TypeError, ValueError):
+                minutos = 5
+            fases_limpias.append({
+                "id": str(f.get("id") or f"f{i+1}"),
+                "nombre": nombre,
+                "minutos": minutos,
+                "activo": bool(f.get("activo", True)),
+            })
+        if fases_limpias:
+            actual["fases"] = fases_limpias
     actual["version"] = int(actual.get("version", 1)) + 1
 
     db.guardar_configuracion(actual)

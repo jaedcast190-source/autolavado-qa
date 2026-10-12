@@ -45,6 +45,17 @@ CONFIG_POR_DEFECTO = {
         "b2": {"nombre": "Bahía 2", "activo": True, "servicios": None},
         "b3": {"nombre": "Bahía 3", "activo": True, "servicios": None},
     },
+    # Fases del lavado (sub-estados dentro de "En proceso").
+    # El técnico las va marcando; el monitor y el cliente ven en cuál va.
+    # minutos = tiempo esperado de cada fase (para la barra de avance).
+    "fases": [
+        {"id": "f1", "nombre": "Enjabonado", "minutos": 5, "activo": True},
+        {"id": "f2", "nombre": "Enjuague",   "minutos": 4, "activo": True},
+        {"id": "f3", "nombre": "Secado",     "minutos": 6, "activo": True},
+        {"id": "f4", "nombre": "Aspirado",   "minutos": 8, "activo": True},
+        {"id": "f5", "nombre": "Vestiduras", "minutos": 15, "activo": True},
+        {"id": "f6", "nombre": "Encerado",   "minutos": 12, "activo": True},
+    ],
 }
 
 ESTADO_POR_DEFECTO = {
