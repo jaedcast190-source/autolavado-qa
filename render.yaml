@@ -1,0 +1,25 @@
+# Configuración de despliegue para Render.
+# Crea automáticamente el servicio web y la base de datos PostgreSQL.
+# Cuando la app pase a nombre del dueño, solo se recrea bajo su cuenta
+# con este mismo archivo.
+
+databases:
+  - name: autolavado-db
+    databaseName: autolavado
+    plan: free
+
+services:
+  - type: web
+    name: autolavado
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: autolavado-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: "3.12.6"

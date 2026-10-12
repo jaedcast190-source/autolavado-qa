@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ configuracion.nombre_negocio }} — Panel de control</title>
+<style>
+  :root{
+    --azul:#185FA5; --azul-bg:#E6F1FB; --azul-tx:#0C447C;
+    --verde:#3B6D11; --verde-bg:#EAF3DE;
+    --ambar:#854F0B; --ambar-bg:#FAEEDA;
+    --gris-bg:#F1EFE8; --gris-bd:#D3D1C7; --gris-tx:#5F5E5A;
+    --texto:#2C2C2A; --blanco:#ffffff;
+    --sombra:0 1px 3px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#F7F6F1; color:var(--texto); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .topbar{
+    background:var(--blanco); border-bottom:1px solid var(--gris-bd);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 20px; position:sticky; top:0; z-index:10;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .logo{
+    width:36px; height:36px; border-radius:8px; background:var(--azul-bg);
+    display:flex; align-items:center; justify-content:center; font-size:20px;
+  }
+  .brand h1{font-size:16px; font-weight:600;}
+  .brand span{font-size:12px; color:var(--gris-tx); display:block; font-weight:400;}
+  .btn{
+    font-family:inherit; font-size:14px; font-weight:500; cursor:pointer;
+    border-radius:8px; padding:9px 16px; border:1px solid var(--gris-bd);
+    background:var(--blanco); color:var(--texto); transition:all .12s;
+  }
+  .btn:hover{background:var(--gris-bg);}
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--azul); color:var(--blanco); border-color:var(--azul);}
+  .btn-primary:hover{background:#12508c;}
+  .wrap{max-width:1100px; margin:0 auto; padding:20px;}
+  .metrics{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px;}
+  .metric{background:var(--blanco); border:1px solid var(--gris-bd); border-radius:12px; padding:14px 16px; box-shadow:var(--sombra);}
+  .metric .lbl{font-size:12px; color:var(--gris-tx);}
+  .metric .val{font-size:26px; font-weight:600; margin-top:2px;}
+  .grid{display:grid; grid-template-columns:360px 1fr; gap:20px; align-items:start;}
+  .card{background:var(--blanco); border:1px solid var(--gris-bd); border-radius:12px; box-shadow:var(--sombra);}
+  .card-h{padding:14px 18px; border-bottom:1px solid var(--gris-bd); font-size:14px; font-weight:600;}
+  .card-b{padding:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:13px; font-weight:500; margin-bottom:5px;}
+  .field label .req{color:#A32D2D;}
+  input,select,textarea{
+    font-family:inherit; font-size:14px; width:100%; padding:9px 11px;
+    border:1px solid var(--gris-bd); border-radius:8px; background:var(--blanco); color:var(--texto);
+  }
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--azul); box-shadow:0 0 0 3px var(--azul-bg);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .err{border-color:#A32D2D !important; box-shadow:0 0 0 3px #FCEBEB !important;}
+  .err-msg{color:#A32D2D; font-size:12px; margin-top:4px; display:none;}
+  .price-box{
+    background:var(--azul-bg); color:var(--azul-tx); border-radius:8px;
+    padding:12px 14px; font-size:13px; margin:4px 0 14px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .price-box b{font-size:18px;}
+  .queue-item{
+    display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--gris-bd);
+  }
+  .queue-item:last-child{border-bottom:none;}
+  .folio{font-size:11px; color:var(--gris-tx); font-family:monospace;}
+  .qi-time{min-width:48px; font-size:13px; font-weight:600;}
+  .qi-main{flex:1; min-width:0;}
+  .qi-main .name{font-size:14px; font-weight:500;}
+  .qi-main .sub{font-size:12px; color:var(--gris-tx);}
+  .tag{font-size:11px; padding:3px 9px; border-radius:20px; white-space:nowrap; font-weight:500;}
+  .tag-prof{background:var(--azul-bg); color:var(--azul-tx);}
+  .tag-est{background:var(--gris-bg); color:var(--gris-tx);}
+  .tag-exp{background:var(--ambar-bg); color:var(--ambar);}
+  .state{font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500; cursor:pointer; border:none; font-family:inherit;}
+  .st-espera{background:var(--gris-bg); color:var(--gris-tx);}
+  .st-proceso{background:var(--ambar-bg); color:var(--ambar);}
+  .st-listo{background:var(--verde-bg); color:var(--verde);}
+  .empty{padding:30px 18px; text-align:center; color:var(--gris-tx); font-size:13px;}
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--verde); color:#fff; padding:12px 20px; border-radius:10px; font-size:14px; font-weight:500;
+    opacity:0; transition:all .25s; box-shadow:0 4px 12px rgba(0,0,0,.15); z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .btn-wa{background:#25D366; color:#fff; border-color:#25D366;}
+  .btn-wa:hover{background:#1eb658;}
+  .btn-wa-out{background:#fff; color:#1eb658; border-color:#25D366;}
+  .btn-wa-out:hover{background:#EAF9EF;}
+  .modal-bg{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+    z-index:100; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal-bg.show{display:flex;}
+  .modal{
+    background:var(--blanco); border-radius:14px; width:100%; max-width:380px;
+    box-shadow:0 10px 40px rgba(0,0,0,.25); overflow:hidden;
+  }
+  .modal-h{display:flex; align-items:center; justify-content:space-between; padding:16px 18px 8px;}
+  .modal-x{background:none; border:none; font-size:18px; cursor:pointer; color:var(--gris-tx); line-height:1;}
+  .wa-screen{
+    background:#E5DDD5; margin:12px 16px; border-radius:10px; padding:16px 12px; min-height:120px;
+    background-image:radial-gradient(rgba(0,0,0,.02) 1px, transparent 1px); background-size:14px 14px;
+  }
+  .wa-bubble{
+    background:#DCF8C6; border-radius:10px; padding:10px 12px; font-size:13.5px; line-height:1.5;
+    max-width:88%; margin-left:auto; box-shadow:0 1px 1px rgba(0,0,0,.08); white-space:pre-wrap; color:#1a1a1a;
+  }
+  .wa-time{font-size:10px; color:#667781; text-align:right; margin-top:4px;}
+  .modal-f{display:flex; gap:10px; justify-content:flex-end; padding:12px 18px 18px;}
+  .st-entregado{background:#E6F1FB; color:#0C447C;}
+  .sub2{font-size:11px; color:var(--gris-tx); margin-top:2px;}
+  .qi-right{display:flex; flex-direction:column; align-items:flex-end; gap:5px;}
+  .qi-meta{display:flex; align-items:center; gap:6px;}
+  .pg{font-size:10px; padding:2px 7px; border-radius:20px; font-weight:500;}
+  .pg-si{background:var(--verde-bg); color:var(--verde);}
+  .pg-no{background:var(--gris-bg); color:var(--gris-tx);}
+  .calif-ok{font-size:11px; color:#BA7517; font-weight:500;}
+  .calif-na{font-size:11px; color:var(--gris-bd);}
+  .btn-calif{font-family:inherit; font-size:10px; padding:3px 8px; border-radius:20px; border:1px solid #EF9F27; background:#FAEEDA; color:#854F0B; cursor:pointer; font-weight:500;}
+  .btn-calif:hover{background:#F7E2C0;}
+  .stars{display:flex; gap:6px; justify-content:center; margin:6px 0 14px;}
+  .star{font-size:34px; cursor:pointer; color:#D3D1C7; transition:transform .1s; line-height:1;}
+  .star:hover{transform:scale(1.15);}
+  .star.on{color:#EF9F27;}
+  .fallas{display:none; flex-wrap:wrap; gap:7px; margin-bottom:14px;}
+  .fallas.show{display:flex;}
+  .chip{font-family:inherit; font-size:12px; padding:6px 12px; border-radius:20px; border:1px solid var(--gris-bd); background:#fff; cursor:pointer; color:var(--texto);}
+  .chip.on{background:#FCEBEB; border-color:#E24B4A; color:#A32D2D; font-weight:500;}
+  .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 16px;}
+  .admin-item{border:1px solid var(--gris-bd);border-radius:9px;padding:11px;font-size:12px;}
+  .admin-item b{display:block;font-size:13px;margin-bottom:2px;}
+  #modalAdmin .modal{width:min(940px,96vw);max-width:940px;height:min(760px,92dvh);max-height:92dvh;overflow:hidden;display:flex;flex-direction:column;}
+  #modalAdmin .modal-h{padding:20px 24px;border-bottom:1px solid var(--gris-bd);flex-shrink:0;}
+  #formAdmin{display:flex;flex-direction:column;flex:1;min-height:0;}
+  #modalAdmin .modal-f{flex-shrink:0;background:white;border-top:1px solid var(--gris-bd);padding:14px 24px;}
+  body:has(#modalAdmin.show){overflow:hidden;}
+  .admin-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px 24px;background:#f5f7fa;flex-shrink:0;}
+  .admin-nav-btn{border:1px solid transparent;background:transparent;border-radius:9px;padding:12px 8px;cursor:pointer;color:#526173;font-weight:600;font-size:14px;}
+  .admin-nav-btn[aria-current="page"]{background:white;color:var(--azul);border-color:#cbdced;box-shadow:0 2px 5px #102b4810;}
+  .admin-body h2{font-size:20px;margin:0 0 8px;}
+  .admin-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+  .admin-note{background:#f3f7fb;padding:14px;border-radius:8px;font-size:13px;color:#526173;margin:16px 0;line-height:1.6;}
+  .admin-card{border:1px solid #dbe2ea;border-radius:10px;margin:10px 0;background:#fff;overflow:hidden;}
+  .admin-card>summary{padding:16px;cursor:pointer;font-weight:600;}
+  .admin-card[open]>summary{border-bottom:1px solid #e5eaf0;background:#f8fafc;}
+  .admin-card-body{padding:16px;display:grid;gap:12px;}
+  .admin-card-body>label{font-size:13px;line-height:1.6;}
+  .tarifas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+  .tarifa-vehiculo{display:grid;gap:7px;padding:14px;background:#f6f8fb;border:1px solid #e0e6ed;border-radius:8px;min-width:0;}
+  .tarifa-vehiculo label{font-size:12px;color:#526173;}
+  .tarifa-vehiculo input{min-width:0;width:100%;box-sizing:border-box;}
+  .admin-card-body select[multiple]{min-height:110px;}
+  @media(max-width:600px){ #modalAdmin .modal{height:94dvh;max-height:94dvh;} .admin-nav{padding:8px;gap:2px;}.admin-nav-btn{font-size:12px;padding:10px 3px;}.admin-section-head{align-items:flex-start;flex-direction:column;}}
+  .admin-body{padding:22px 24px;overflow-y:auto;min-height:0;flex:1;scrollbar-gutter:stable;overscroll-behavior:contain;}
+  .admin-help{font-size:13px;color:var(--gris-tx);margin-bottom:14px;}
+  .admin-service{border-top:1px solid var(--gris-bd);padding-top:12px;margin-top:12px;}
+  .admin-service h3{font-size:14px;margin-bottom:8px;}
+  #adminMensaje{font-size:13px;color:#A32D2D;white-space:pre-wrap;}
+  .btn:disabled{opacity:.55;cursor:wait;}
+  @media(max-width:820px){ .grid{grid-template-columns:1fr;} }
+  .vista-nav{max-width:1100px;margin:16px auto;display:flex;gap:10px;padding:0 20px;}
+  #vistaTecnico{max-width:1100px;margin:auto;padding:0 20px 40px;color:#182b40;}
+  .modo-tecnico{background:#eff5fa;}
+  .modo-tecnico .admin-action{display:none;}
+  .tec-head{padding:28px;border-radius:22px;background:linear-gradient(125deg,#10243c,#16475c);color:white;}
+  .tec-eyebrow{font-size:12px;letter-spacing:2px;color:#80e4ef;font-weight:700;}
+  .tec-head h1{font-size:clamp(26px,4vw,38px);line-height:1.2;margin:12px 0;}
+  .tec-head p{color:#cbdce8;font-size:15px;}
+  .tec-toolbar{display:flex;align-items:end;gap:12px;margin:20px 0 10px;}.tec-toolbar>div{flex:1;}.tec-toolbar label{display:block;font-weight:600;margin-bottom:6px;}
+  .tec-local{font-size:12px;color:#526579;margin-bottom:16px;}
+  .tec-stats{display:flex;gap:12px;margin:16px 0;}.tec-stats>div{background:white;padding:14px;border-radius:14px;flex:1;border:1px solid #dce5ed;}.tec-stats b{display:block;font-size:25px;}.tec-stats span{font-size:12px;}
+  .tec-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+  .tec-job{background:white;border:1px solid #dce5ed;border-radius:18px;overflow:hidden;box-shadow:0 4px 16px #17365108;min-width:0;}
+  .tec-job-header{padding:18px;background:#f8fafc;border-bottom:1px solid #e3eaf0;display:flex;justify-content:space-between;align-items:start;gap:8px;}.tec-job h2{font-size:25px;letter-spacing:1px;overflow-wrap:anywhere;}
+  .tec-badge{background:#e0f3f5;color:#105b69;padding:6px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+  .tec-job-body{padding:18px;display:grid;gap:12px;}.tec-service{font-size:19px;font-weight:700;}.tec-notes{background:#f1f5f9;border-radius:10px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .tec-actions{display:flex;gap:10px;flex-wrap:wrap;}.tec-actions button{flex:1;min-height:48px;font-size:15px;}.tec-main{background:#087d8c!important;color:white!important;border:0;}.tec-warning{background:#fff4d8;color:#78500d;padding:10px;border-radius:8px;}
+  .tec-dialog{max-width:520px;max-height:90dvh;overflow:auto;}.tec-empty{grid-column:1/-1;text-align:center;padding:36px;background:white;border:1px dashed #bdcbd8;border-radius:18px;}
+  @media(max-width:700px){.topbar{position:relative;flex-wrap:wrap;gap:12px;}.topbar>div:last-child{flex-wrap:wrap;}.tec-grid{grid-template-columns:1fr;}#vistaTecnico{padding:0 12px 28px;}.tec-head{padding:22px;}.vista-nav{padding:0 12px;}.vista-nav button{flex:1;min-height:48px;}.tec-toolbar select{font-size:16px;min-height:48px;}.tec-stats{gap:6px;}.tec-stats>div{padding:10px;}.tec-dialog textarea{font-size:16px;}.queue-item{flex-wrap:wrap;}.modal-bg{padding:10px;}}
+
+  body{background:#070e1c;}.topbar{background:#101b2e;border-color:#26364c;color:#f0f7ff;}.brand span{color:#a7b7cb;}
+  #vistaRecepcion{max-width:1320px;color:#e8f1fd;}#vistaRecepcion .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+  #vistaRecepcion .card,#vistaRecepcion .metric{background:#101b2e;border-color:#29394f;color:#edf5ff;}
+  #vistaRecepcion .card-h{border-color:#29394f;}#vistaRecepcion .metric .lbl,#vistaRecepcion .sub,#vistaRecepcion .sub2{color:#adc0d6;}
+  .rec-kicker{font-size:11px;color:#26d8ef;letter-spacing:1.8px;font-weight:700;}.reception-card h2{font-size:22px;margin:5px 0;}.reception-card .card-h p,.rec-hint{font-size:13px;color:#a6b8ce;font-weight:400;line-height:1.6;}
+  .reception-card input,.reception-card select,.reception-card textarea{background:#1b2a40;border-color:#34465f;color:#f4f8ff;min-height:46px;font-size:16px;color-scheme:dark;}
+  .reception-card input::placeholder,.reception-card textarea::placeholder{color:#9eb0c7;}.reception-card label{color:#c6d6e8;}
+  .rec-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:12px;border-bottom:1px solid #29394f;}.rec-steps .btn{background:#19263a;border-color:#2c4057;color:#b6c7dc;padding:10px 2px;font-size:13px;min-height:44px;}.rec-steps .btn[aria-current="step"]{color:#38def1;border-color:#05bfd6;background:#0c3548;}
+  .rec-check{display:flex;gap:10px;align-items:center;font-size:14px;margin:10px 0 18px;}.rec-check input{width:22px;min-height:22px;flex-shrink:0;}
+  .rec-services{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0;}.rec-service{padding:14px;text-align:left;background:#19283e;color:#e7f3ff;border:1px solid #30435e;border-radius:12px;cursor:pointer;min-height:105px;overflow-wrap:anywhere;}.rec-service[aria-pressed="true"]{border:2px solid #00c5de;background:#0b3345;}.rec-service strong,.rec-service span{display:block;margin-bottom:7px;}.rec-service b{color:#25def3;font-size:20px;}.rec-service span{color:#aac1d8;font-size:12px;}
+  .rec-footer{background:#0a1426;border-top:1px solid #29394f;display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:16px;position:sticky;bottom:0;z-index:5;}.rec-footer>div{flex:1;}.rec-footer span,.rec-footer b{display:block;}.rec-footer span{font-size:11px;color:#b7c9df;}.rec-footer b{color:#2bdcf0;font-size:18px;}.reception-card .btn-primary{background:linear-gradient(110deg,#009dbb,#1264e9);border:0;color:white;min-height:48px;}
+  .rec-message{padding:12px 18px;color:#adc4dc;font-size:13px;}.rec-message .btn{margin-top:10px;}
+  .rec-vehicle{font-weight:600;color:#e7f4ff;font-size:13px;margin:5px 0;}.rec-inspection{border-left:3px solid #e7ad32;padding:8px 10px;background:#233044;color:#ecdbb4;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;}
+  #vistaRecepcion .queue-item{border-color:#29394f;align-items:flex-start;flex-wrap:wrap;}#vistaRecepcion .qi-main{min-width:170px;}#vistaRecepcion .qi-right{align-items:flex-start;}.reception-card{overflow:visible;border-radius:16px;}.reception-card .card-h{border-radius:16px 16px 0 0;}
+  @media(max-width:1000px){ #vistaRecepcion .grid{grid-template-columns:1fr;}#vistaRecepcion{padding:12px;}.rec-footer{bottom:0;} }
+  @media(max-width:480px){.rec-services{grid-template-columns:1fr;}.rec-footer .btn{width:100%;}.rec-steps .btn{font-size:11px;}.reception-card .row2{grid-template-columns:1fr;}.brand h1{font-size:14px;}.vista-nav{flex-wrap:wrap;} }
+  #mProceso{color:#ffca65!important;}#mListo{color:#59dfb8!important;}#mCalif{color:#ffcd68!important;}
+  .topbar .btn,.vista-nav .btn{background:#1a2b42;border-color:#304660;color:#e0efff;min-height:44px;}.topbar .btn:hover,.vista-nav .btn:hover{background:#21415b;}
+  @media(max-width:900px){.topbar{flex-wrap:wrap;gap:10px;}.topbar>div:last-child{flex-wrap:wrap;}.metrics{grid-template-columns:repeat(3,minmax(0,1fr));}.metric{padding:12px;}}
+  @media(max-width:480px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr));}.metrics .metric:last-child{grid-column:1/-1;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">🚿</div>
+    <div><h1><b id="nombreNegocio">{{ configuracion.nombre_negocio }}</b> — Panel de control<span id="fechaHoy"></span></h1></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span style="font-size:11px;padding:4px 9px;border-radius:20px;background:#EAF3DE;color:#3B6D11;font-weight:600">QA v2 · local</span>
+    <button class="btn admin-action" onclick="exportarDatos()">⬇ Respaldo</button>
+    <button class="btn admin-action" onclick="abrirCaja()">Caja</button>
+    <button class="btn admin-action" id="btnAdmin" onclick="abrirAdmin()" aria-label="Abrir administración">⚙ Administrar</button>
+    <button class="btn admin-action" onclick="cambiarVista('recepcion'); pasoRecepcion(0); document.getElementById('inPlaca').focus()">＋ Nuevo ingreso</button>
+  </div>
+</div>
+
+<nav class="vista-nav" aria-label="Área de trabajo"><button class="btn" onclick="cambiarVista('recepcion')">Recepción</button><button class="btn" onclick="cambiarVista('tecnico')">Área del técnico</button></nav>
+<section id="vistaTecnico" hidden>
+  <header class="tec-head"><span class="tec-eyebrow">OPERACIÓN · AUTOLAVADO</span><h1>Tu siguiente trabajo,<br>todo a la mano.</h1><p>Revisa la orden, inicia y registra cómo va el servicio.</p></header>
+  <div class="tec-toolbar"><div><label for="tecnicoActual">Selecciona al técnico</label><select id="tecnicoActual" onchange="renderTecnico()"></select></div><button class="btn" onclick="actualizarTecnico()">Actualizar</button></div>
+  <p class="tec-local">Vista local de esta PC. Seleccionar un técnico filtra la cola; todavía no es un acceso personal ni sincroniza otros dispositivos.</p>
+  <div id="tecnicoResumen" class="tec-stats"></div><div id="tecnicoTrabajos" class="tec-grid"></div>
+</section>
+<div class="wrap" id="vistaRecepcion">
+
+  <div class="metrics">
+    <div class="metric"><div class="lbl">Vehículos hoy</div><div class="val" id="mTotal">3</div></div>
+    <div class="metric"><div class="lbl">En proceso</div><div class="val" style="color:var(--ambar)" id="mProceso">1</div></div>
+    <div class="metric"><div class="lbl">Terminados</div><div class="val" style="color:var(--verde)" id="mListo">1</div></div>
+    <div class="metric"><div class="lbl">Ingreso del día</div><div class="val" id="mIngreso">$430</div></div>
+    <div class="metric"><div class="lbl">Calificación</div><div class="val" style="color:#BA7517" id="mCalif">—</div></div>
+  </div>
+
+  <div class="grid">
+
+    <section class="card reception-card">
+      <div class="card-h"><span class="rec-kicker">RECEPCIÓN</span><h2>Registrar vehículo</h2><p>Identifica el auto, elige su servicio y revisa el ingreso.</p></div>
+      <nav class="rec-steps" aria-label="Pasos del ingreso">
+        <button class="btn" id="pasoBtn0" onclick="pasoRecepcion(0)">1 Vehículo</button><button class="btn" id="pasoBtn1" onclick="pasoRecepcion(1)">2 Cliente</button><button class="btn" id="pasoBtn2" onclick="pasoRecepcion(2)">3 Servicio</button><button class="btn" id="pasoBtn3" onclick="pasoRecepcion(3)">4 Revisión</button>
+      </nav>
+      <div class="card-b">
+        <section id="paso0">
+          <div class="field"><label for="inTipo">Tipo de vehículo</label><select id="inTipo" onchange="calcularPrecio(); pintarServiciosRecepcion()"><option>Auto</option><option>SUV</option><option>Camioneta</option><option>Moto</option></select></div>
+          <div class="field"><label for="inPlaca">Placa *</label><input id="inPlaca" placeholder="ABC-123" maxlength="12" autocomplete="off" style="text-transform:uppercase"><div id="errPlaca" class="err-msg">Captura una placa válida y no duplicada</div></div>
+          <div class="row2"><div class="field"><label for="inMarca">Marca</label><input id="inMarca" maxlength="60" placeholder="Ej. Toyota"></div><div class="field"><label for="inModelo">Modelo</label><input id="inModelo" maxlength="60" placeholder="Ej. Corolla"></div></div>
+          <div class="row2"><div class="field"><label for="inColor">Color</label><input id="inColor" maxlength="60" placeholder="Ej. Blanco"></div><div class="field"><label for="inKm">Kilometraje opcional</label><input id="inKm" inputmode="numeric" placeholder="Ej. 84300"></div></div>
+          <button class="btn btn-primary" onclick="pasoRecepcion(1)">Continuar con cliente →</button>
+        </section>
+        <section id="paso1" hidden>
+          <div class="field"><label for="inNombre">Nombre del cliente *</label><input id="inNombre" maxlength="100" autocomplete="name"><div id="errNombre" class="err-msg">Escribe el nombre del cliente</div></div>
+          <div class="field"><label for="inTel">Teléfono opcional</label><input id="inTel" maxlength="14" inputmode="tel" autocomplete="tel" placeholder="10 dígitos"><div id="errTel" class="err-msg">Captura un teléfono válido de 10 dígitos</div></div>
+          <label class="rec-check"><input id="inFrec" type="checkbox"> Cliente frecuente · descuento del 10%</label>
+          <button class="btn btn-primary" onclick="pasoRecepcion(2)">Elegir servicio →</button>
+        </section>
+        <section id="paso2" hidden>
+          <div class="field"><label for="inLavado">Tipo de servicio</label><select id="inLavado" onchange="calcularPrecio(); actualizarRecursos(); pintarServiciosRecepcion()"><option value="">Selecciona un servicio</option></select></div>
+          <div id="recepcionServicios" class="rec-services"></div>
+          <p class="rec-hint">Precio para el tipo de vehículo seleccionado. Esta versión registra un servicio por entrada.</p>
+          <button class="btn btn-primary" onclick="pasoRecepcion(3)">Revisar ingreso →</button>
+        </section>
+        <section id="paso3" hidden>
+          <div class="row2"><div class="field"><label for="inFecha">Fecha de la cita</label><input id="inFecha" type="date"></div><div class="field"><label for="inHora">Hora de la cita</label><input id="inHora" type="time"></div></div>
+          <div class="field"><label for="inBahia">Bahía disponible</label><select id="inBahia"></select></div>
+          <div class="field"><label for="inResp">Responsable compatible</label><select id="inResp"></select></div>
+          <div class="field"><label for="inSuciedad">Nivel de suciedad observado</label><select id="inSuciedad"><option value="">Sin evaluar</option><option>Bajo</option><option>Medio</option><option>Alto</option></select></div>
+          <label class="rec-check"><input id="inPertenencias" type="checkbox"> Confirmé que el cliente conserva sus pertenencias de valor</label>
+          <div class="field"><label for="inDanos">Daños preexistentes observados</label><textarea id="inDanos" rows="2" maxlength="500" placeholder="Ej. rayón en puerta derecha. Vacío significa sin registro."></textarea></div>
+          <div class="field"><label for="inNotas">Instrucciones para el técnico</label><textarea id="inNotas" rows="2" maxlength="500" placeholder="Ej. no usar aromatizante"></textarea></div>
+          <div class="field"><label for="inPago">Método de pago previsto</label><select id="inPago"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option>Por definir</option></select></div>
+          <p class="rec-hint">Registrar no inicia el trabajo ni realiza un cobro. Recepción confirma la llegada antes de iniciar.</p>
+        </section>
+      </div>
+      <footer class="rec-footer"><div><span>Total estimado</span><b id="precioEst">—</b></div><div><span>Entrega estimada</span><b id="entregaEst">—</b></div><button id="btnRegistrar" class="btn btn-primary" onclick="registrarVehiculo()">Registrar entrada</button></footer>
+      <details class="rec-message"><summary>Previsualizar mensajes</summary><button class="btn" onclick="enviarWhatsApp('confirmacion')">Simular confirmación</button><button class="btn" onclick="enviarWhatsApp('recordatorio')">Simular recordatorio</button></details>
+    </section>
+
+    <!-- TABLERO EN VIVO -->
+    <div class="card">
+      <div class="card-h">Vehículos del día <span style="font-weight:400; color:var(--gris-tx); font-size:12px;">(confirma llegada, inicio y término)</span></div>
+      <div id="cola"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL PRUEBA WHATSAPP -->
+<div class="modal-bg" id="modalWA" onclick="cerrarWA(event)">
+  <div class="modal">
+    <div class="modal-h">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:20px;">📲</span>
+        <b style="font-size:15px;" id="waTitulo">Prueba de mensaje WhatsApp</b>
+      </div>
+      <button class="modal-x" onclick="cerrarWA()">✕</button>
+    </div>
+    <p style="font-size:12px; color:var(--gris-tx); padding:0 18px;">Así se vería el mensaje que le llega al cliente (simulación).</p>
+    <div class="wa-screen">
+      <div class="wa-bubble">
+        <div id="waTexto"></div>
+        <div class="wa-time" id="waHoraEnvio">10:30 ✓✓</div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="cerrarWA()">Cerrar</button>
+      <button class="btn btn-wa" onclick="confirmarEnvioWA()">Finalizar simulación</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CALIFICACIÓN DEL CLIENTE -->
+<div class="modal-bg" id="modalCal" onclick="cerrarCal(event)">
+  <div class="modal">
+    <div class="modal-h">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:20px;">⭐</span>
+        <b style="font-size:15px;">Calificar el servicio</b>
+      </div>
+      <button class="modal-x" onclick="cerrarCal()">✕</button>
+    </div>
+    <div style="padding:0 18px 6px;">
+      <p style="font-size:13px; color:var(--gris-tx);" id="calCliente">Folio · cliente</p>
+    </div>
+    <div style="padding:0 18px;">
+      <p style="font-size:13px; text-align:center; margin-top:8px;">¿Cómo quedó su vehículo?</p>
+      <div class="stars" id="starBox">
+        <span class="star" onclick="setEstrellas(1)">★</span>
+        <span class="star" onclick="setEstrellas(2)">★</span>
+        <span class="star" onclick="setEstrellas(3)">★</span>
+        <span class="star" onclick="setEstrellas(4)">★</span>
+        <span class="star" onclick="setEstrellas(5)">★</span>
+      </div>
+      <p style="font-size:12px; color:var(--gris-tx); text-align:center; margin-bottom:12px;" id="calTexto">Toca una estrella</p>
+
+      <div class="fallas" id="fallasBox">
+        <button class="chip" onclick="toggleChip(this)">Interior</button>
+        <button class="chip" onclick="toggleChip(this)">Exterior</button>
+        <button class="chip" onclick="toggleChip(this)">Rines</button>
+        <button class="chip" onclick="toggleChip(this)">Tiempo de entrega</button>
+        <button class="chip" onclick="toggleChip(this)">Trato del personal</button>
+      </div>
+
+      <div class="field">
+        <label style="font-size:12px;">Comentario (opcional)</label>
+        <textarea id="calComent" rows="2" placeholder="Ej. quedó bien, solo faltó la cajuela"></textarea>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="cerrarCal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCalif()">Guardar calificación</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalCobro">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Registrar cobro">
+    <div class="modal-h"><b>Registrar cobro</b><button class="modal-x" onclick="cerrarCobro()" aria-label="Cerrar cobro">✕</button></div>
+    <form onsubmit="registrarCobro(event)"><div style="padding:18px">
+      <p id="cobroResumen"></p><div class="field"><label for="cobroImporte">Importe recibido ($)</label><input id="cobroImporte" type="number" min="0.01" step="0.01" required></div>
+      <div class="field"><label for="cobroMetodo">Método de pago</label><select id="cobroMetodo"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option></select></div>
+      <label for="correccionMotivo">Motivo para corregir un cobro</label><input id="correccionMotivo" maxlength="200" placeholder="Solo si necesitas anular un cobro erróneo"><p id="cobroError" role="status"></p><div id="cobroHistorial"></div>
+    </div><div class="modal-f"><button class="btn" type="button" onclick="cerrarCobro()">Cancelar</button><button class="btn btn-primary" type="submit">Registrar importe recibido</button></div></form>
+  </div>
+</div>
+<div class="modal-bg" id="modalSaldo">
+  <div class="modal"><div class="modal-h"><b>Entrega con saldo pendiente</b></div><p id="saldoAviso" style="padding:18px"></p><div class="modal-f"><button class="btn" onclick="cancelarEntrega()">Volver</button><button class="btn btn-primary" onclick="confirmarEntregaPendiente()">Entregar y conservar deuda</button></div></div>
+</div>
+<div class="modal-bg" id="modalCaja">
+  <div class="modal" style="max-width:650px;max-height:90vh;overflow:auto" role="dialog" aria-modal="true" aria-label="Caja del día">
+    <div class="modal-h"><b>Caja del día</b><button class="modal-x" onclick="document.getElementById('modalCaja').classList.remove('show')" aria-label="Cerrar caja">✕</button></div>
+    <div style="padding:18px"><label for="cajaFecha">Día del corte</label><input id="cajaFecha" type="date" onchange="abrirCaja(true)"><div id="cajaResumen"></div><p class="admin-help">Efectivo esperado = fondo inicial + cobros netos en efectivo − gastos − retiros en efectivo.</p>
+      <div class="field"><label for="cajaFondo">Fondo inicial ($)</label><input id="cajaFondo" type="number" min="0" step="0.01" value="0"></div>
+      <div class="field"><label for="cajaContado">Efectivo contado ($)</label><input id="cajaContado" type="number" min="0" step="0.01"></div>
+      <p id="cajaMensaje" role="status"></p><div id="cajaCierres"></div>
+      <details class="admin-card"><summary>Gastos y retiros de hoy</summary><div class="admin-card-body">
+        <label for="salidaTipo">Tipo</label><select id="salidaTipo"><option>Gasto</option><option>Retiro</option></select>
+        <label for="salidaImporte">Importe ($)</label><input id="salidaImporte" type="number" min="0.01" step="0.01">
+        <label for="salidaMetodo">Método</label><select id="salidaMetodo"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option></select>
+        <label for="salidaMotivo">Concepto / motivo</label><input id="salidaMotivo" maxlength="200">
+        <button class="btn" onclick="registrarSalida()">Registrar salida de hoy</button><p id="salidaMensaje" role="status"></p>
+      </div></details><div id="cajaSalidas"></div>
+      <details class="admin-card"><summary>Resumen de ventas: día, mes o año</summary><div class="admin-card-body">
+        <label for="reportePeriodo">Periodo</label><select id="reportePeriodo" onchange="mostrarReporte()"><option value="dia">Día</option><option value="mes">Mes</option><option value="anio">Año</option></select>
+        <label for="reporteFecha">Fecha del periodo a consultar</label><input id="reporteFecha" type="date" onchange="mostrarReporte()">
+        <div id="reporteVentas"></div>
+      </div></details>
+    </div><div class="modal-f"><button class="btn btn-primary" onclick="guardarCierre()">Guardar corte diario</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalTecnico"><div class="modal tec-dialog" role="dialog" aria-modal="true" aria-labelledby="tecAccionTitulo">
+<div class="modal-h"><b id="tecAccionTitulo">Registrar incidencia</b><button class="modal-x" onclick="cerrarAccionTecnico()" aria-label="Cerrar">✕</button></div>
+<form onsubmit="guardarAccionTecnico(event)"><div class="card-b"><label for="tecMotivo">Describe el motivo</label><textarea id="tecMotivo" rows="4" maxlength="500" required></textarea><p id="tecError" role="status"></p></div><div class="modal-f"><button class="btn" type="button" onclick="cerrarAccionTecnico()">Cancelar</button><button class="btn btn-primary" type="submit">Guardar</button></div></form></div></div>
+
+<!-- MODAL ADMINISTRACIÓN -->
+<div class="modal-bg" id="modalAdmin" onclick="cerrarAdmin(event)">
+  <div class="modal">
+    <div class="modal-h">
+      <b>⚙ Administración</b>
+      <button class="modal-x" onclick="cerrarAdmin()" aria-label="Cerrar">✕</button>
+    </div>
+    <nav class="admin-nav" aria-label="Secciones de administración">
+      <button type="button" id="navNegocio" class="admin-nav-btn" onclick="seccionAdmin('Negocio')">Negocio</button>
+      <button type="button" id="navServicios" class="admin-nav-btn" onclick="seccionAdmin('Servicios')">Servicios</button>
+      <button type="button" id="navPersonal" class="admin-nav-btn" onclick="seccionAdmin('Personal')">Personal</button>
+      <button type="button" id="navBahias" class="admin-nav-btn" onclick="seccionAdmin('Bahias')">Bahías</button>
+    </nav>
+    <form id="formAdmin" novalidate onsubmit="guardarConfiguracion(event)">
+      <div class="admin-body">
+        <fieldset id="adminCampos" disabled style="border:0;padding:0;margin:0;min-width:0;">
+          <section id="panelNegocio" data-admin-panel="Negocio">
+            <h2>Tu negocio</h2><p class="admin-help">Configura cómo aparece tu negocio en el panel.</p>
+            <div class="field"><label for="cfgNombre">Nombre del negocio</label><input id="cfgNombre" maxlength="100" required autocomplete="organization"></div>
+            <p class="admin-note">Los cambios se guardan en esta PC. Los registros anteriores conservan sus precios y datos.</p>
+          </section>
+          <section id="panelServicios" data-admin-panel="Servicios" hidden>
+            <div class="admin-section-head"><h2>Servicios y precios</h2><button class="btn btn-primary" type="button" onclick="agregarServicioAdmin()">＋ Agregar servicio</button></div>
+            <p class="admin-help">Abre un servicio para editarlo. Precios independientes por tipo de vehículo, en pesos enteros.</p>
+            <details class="admin-note"><summary>Cómo funcionan los precios programados</summary><p>El nuevo precio se aplica desde la fecha y hora local indicadas, a las entradas registradas desde ese momento. Para retirar una programación, borra ambos campos y ajusta el precio base. Se conserva el descuento del 10% para clientes frecuentes.</p></details>
+            <div id="adminServicios"></div>
+          </section>
+          <section id="panelPersonal" data-admin-panel="Personal" hidden>
+            <div class="admin-section-head"><h2>Personal</h2><button class="btn btn-primary" type="button" onclick="agregarRecurso('personal')">＋ Agregar persona</button></div>
+            <p class="admin-help">Administra disponibilidad y especialidades de cada persona.</p><div id="adminPersonal"></div>
+          </section>
+          <section id="panelBahias" data-admin-panel="Bahias" hidden>
+            <div class="admin-section-head"><h2>Bahías</h2><button class="btn btn-primary" type="button" onclick="agregarRecurso('bahias')">＋ Agregar bahía</button></div>
+            <p class="admin-help">Configura los espacios de trabajo y los servicios que admiten.</p><div id="adminBahias"></div>
+          </section>
+        </fieldset>
+        <p id="adminMensaje" role="status" aria-live="polite"></p>
+      </div>
+      <div class="modal-f">
+        <button class="btn" type="button" onclick="cerrarAdmin()">Cancelar</button>
+        <button class="btn btn-primary" id="btnGuardarConfig" type="submit" disabled>Guardar todos los cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script id="configInicial" type="application/json">{{ configuracion|tojson }}</script>
+<script>
+  if(typeof setInterval === "function") setInterval(function(){if(!document.getElementById("vistaTecnico").hidden) renderTecnico();},30000);
+  // Tarifas base por tipo de lavado y multiplicador por vehículo
+  var CONFIG = JSON.parse(document.getElementById("configInicial").textContent);
+  var TARIFA = Object.create(null), FACTOR = CONFIG.tipos_vehiculo;
+  var TAGCLASS = { "Express":"tag-exp", "Estándar":"tag-est", "Profundo":"tag-prof" };
+  var ESTADOS = ["Espera","En proceso","Listo","Entregado"];
+  var STCLASS = { "Espera":"st-espera", "En proceso":"st-proceso", "Listo":"st-listo", "Entregado":"st-entregado" };
+  var DURACION = Object.create(null);
+  var serviciosAdmin = [];
+  var recursosAdmin = {personal:[],bahias:[]};
+  var registrando = false, guardandoConfig = false, versionAdmin = null;
+
+  function aplicarConfiguracion(config){
+    CONFIG = config;
+    FACTOR = config.tipos_vehiculo;
+    TARIFA = Object.create(null); DURACION = Object.create(null);
+    var selector = document.getElementById("inLavado"), seleccionado = selector.value;
+    var activos = Object.keys(config.servicios).filter(function(n){return config.servicios[n].activo !== false;});
+    activos.forEach(function(servicio){
+      TARIFA[servicio] = config.servicios[servicio].precio_actual ?? config.servicios[servicio].precio;
+      DURACION[servicio] = config.servicios[servicio].minutos;
+    });
+    selector.innerHTML = '<option value="">Selecciona un servicio</option>' + activos.map(function(n){
+      return '<option value="'+escaparHTML(n)+'">'+escaparHTML(n)+' — '+DURACION[n]+' min</option>';
+    }).join("");
+    selector.value = activos.includes(seleccionado) ? seleccionado : "";
+    document.getElementById("nombreNegocio").textContent = config.nombre_negocio;
+    document.title = config.nombre_negocio + " — Panel de control";
+    calcularPrecio();
+    actualizarRecursos();
+  }
+
+  async function leerConfiguracion(){
+    var respuesta = await fetch("/api/config", {cache:"no-store"});
+    if(!respuesta.ok) throw new Error("No se pudo cargar la configuración local. Comprueba que la aplicación siga abierta y reintenta.");
+    return await respuesta.json();
+  }
+
+  var folioNum = 3;
+  var cierresCaja = [], salidasCaja = [];
+  var cobroIdx = null, entregaPendiente = null;
+  // Arranca vacío; el estado real llega del servidor en cargarEstadoServidor().
+  var vehiculos = [];
+
+  // --- Persistencia en el servidor (base de datos compartida) ---
+  // Reemplaza localStorage: ahora los datos se comparten entre todos los
+  // dispositivos (recepción y técnicos) y no se pierden al cerrar.
+  var guardadoTimer = null;
+  var guardadoEnVuelo = false;
+  var guardadoPendiente = false;
+
+  async function cargarEstadoServidor(){
+    try{
+      var r = await fetch("/api/estado", {cache:"no-store"});
+      if(!r.ok) throw new Error("respuesta no OK");
+      var data = await r.json();
+      var e = data && data.estado ? data.estado : {};
+      vehiculos   = Array.isArray(e.vehiculos)   ? e.vehiculos   : [];
+      cierresCaja = Array.isArray(e.cierresCaja) ? e.cierresCaja : [];
+      salidasCaja = Array.isArray(e.salidasCaja) ? e.salidasCaja : [];
+      folioNum    = Number.isFinite(e.folioNum)  ? e.folioNum    : vehiculos.length;
+      return true;
+    }catch(err){
+      mostrarToast("No se pudo cargar la información del servidor. Reintenta.");
+      return false;
+    }
+  }
+
+  async function enviarEstadoServidor(){
+    if(guardadoEnVuelo){ guardadoPendiente = true; return; }
+    guardadoEnVuelo = true;
+    try{
+      var r = await fetch("/api/estado", {
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({folioNum:folioNum, vehiculos:vehiculos, cierresCaja:cierresCaja, salidasCaja:salidasCaja})
+      });
+      if(!r.ok) throw new Error("respuesta no OK");
+    }catch(err){
+      mostrarToast("Sin conexión con el servidor; los últimos cambios podrían no haberse guardado.");
+    }finally{
+      guardadoEnVuelo = false;
+      if(guardadoPendiente){ guardadoPendiente = false; enviarEstadoServidor(); }
+    }
+  }
+
+  // Mantiene la firma síncrona que usa el resto del código.
+  // Agenda el envío al servidor con un pequeño retraso (debounce).
+  function guardarDatos(){
+    if(guardadoTimer) clearTimeout(guardadoTimer);
+    guardadoTimer = setTimeout(enviarEstadoServidor, 400);
+    return true;
+  }
+
+  function escaparHTML(valor){
+    return String(valor == null ? "" : valor)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/\"/g,"&quot;").replace(/'/g,"&#039;");
+  }
+
+  function fechaLocalISO(){
+    var d = new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+
+  function normalizarPlaca(v){
+    return (v || "").toUpperCase().replace(/\s+/g,"").replace(/[^A-Z0-9-]/g,"");
+  }
+
+  function placaActivaDuplicada(placa){
+    var p = normalizarPlaca(placa);
+    return vehiculos.some(function(v){
+      var vp = normalizarPlaca(v.placa || ((v.sub||"").split("·")[1]||""));
+      return vp === p && v.estado !== "Entregado" && v.estado !== "Cancelado";
+    });
+  }
+
+  function calcularPrecio(){
+    var lavado = document.getElementById("inLavado").value;
+    var tipo = document.getElementById("inTipo").value;
+    var frec = document.getElementById("inFrec").checked;
+    if(!Object.prototype.hasOwnProperty.call(TARIFA, lavado)){
+      document.getElementById("precioEst").textContent = "—";
+      document.getElementById("entregaEst").textContent = "—";
+      return null;
+    }
+    var precio = CONFIG.servicios[lavado].precios_actuales?.[tipo] ?? Math.round(TARIFA[lavado] * FACTOR[tipo]);
+    if(frec) precio = Math.round(precio * 0.9);
+    document.getElementById("precioEst").textContent = "$" + precio + (frec ? " (-10%)" : "");
+    calcularEntrega();
+    return precio;
+  }
+
+  function calcularEntrega(){
+    var lavado = document.getElementById("inLavado").value;
+    var hora = document.getElementById("inHora").value;
+    if(!hora || !Object.prototype.hasOwnProperty.call(DURACION, lavado)){ document.getElementById("entregaEst").textContent = "—"; return ""; }
+    var p = hora.split(":");
+    var d = new Date(2026, 0, 1, parseInt(p[0],10), parseInt(p[1],10));
+    d.setMinutes(d.getMinutes() + DURACION[lavado]);
+    var hh = (d.getHours()<10?"0":"") + d.getHours();
+    var mm = (d.getMinutes()<10?"0":"") + d.getMinutes();
+    var txt = hh + ":" + mm;
+    document.getElementById("entregaEst").textContent = txt + " hrs";
+    return txt;
+  }
+
+  function ahora(){
+    var d = new Date();
+    var h = d.getHours(), m = d.getMinutes();
+    return (h<10?"0":"")+h + ":" + (m<10?"0":"")+m;
+  }
+
+  function limpiarError(id){
+    var el = document.getElementById(id);
+    el.classList.remove("err");
+    document.getElementById("err"+id.slice(2)).style.display = "none";
+  }
+
+  function pasoRecepcion(n){
+    for(var i=0;i<4;i++){document.getElementById("paso"+i).hidden=i !== n;var b=document.getElementById("pasoBtn"+i);if(b.setAttribute) b.setAttribute("aria-current",i === n ? "step" : "false");}
+    if(n === 2) pintarServiciosRecepcion();
+  }
+  function pintarServiciosRecepcion(){
+    var tipo=document.getElementById("inTipo").value,actual=document.getElementById("inLavado").value;
+    document.getElementById("recepcionServicios").innerHTML=Object.keys(CONFIG.servicios).filter(function(n){return CONFIG.servicios[n].activo !== false;}).map(function(n,i){var s=CONFIG.servicios[n],precio=s.precios_actuales?.[tipo] ?? Math.round((s.precio_actual ?? s.precio)*FACTOR[tipo]);return '<button class="rec-service" type="button" aria-pressed="'+(n === actual)+'" onclick="seleccionarServicioRecepcion('+i+')"><strong>'+escaparHTML(n)+'</strong><span>'+s.minutos+' min · '+escaparHTML(tipo)+'</span><b>'+dinero(centavos(precio))+'</b></button>';}).join('');
+  }
+  function seleccionarServicioRecepcion(i){var nombres=Object.keys(CONFIG.servicios).filter(function(n){return CONFIG.servicios[n].activo !== false;});if(!nombres[i]) return;document.getElementById("inLavado").value=nombres[i];calcularPrecio();actualizarRecursos();pintarServiciosRecepcion();}
+  function detalleVehiculo(v){return [v.marca,v.modelo,v.color].filter(Boolean).join(' · ');}
+  function inspeccionVehiculo(v){var d=v.inspeccionIngreso;if(!d) return '';return 'Suciedad: '+(d.suciedad || 'Sin evaluar')+' · Pertenencias con el cliente: '+(d.pertenenciasConfirmadas ? 'confirmado' : 'sin confirmar')+'\nDaños observados: '+(d.danos || 'Sin registro');}
+
+  function validarCita(){
+    var fecha = document.getElementById("inFecha");
+    var hora = document.getElementById("inHora");
+    var hoy = fechaLocalISO();
+    fecha.min = hoy;
+    var dia = fecha.value || hoy;
+    if(!hora.value || dia < hoy || (dia === hoy && hora.value < ahora())){
+      pasoRecepcion(3);
+      mostrarToast("Elige una fecha y hora actuales o futuras para la cita.");
+      (dia < hoy ? fecha : hora).focus();
+      return false;
+    }
+    return true;
+  }
+
+  async function registrarVehiculo(){
+    if(registrando) return;
+    var nombre = document.getElementById("inNombre");
+    var placa = document.getElementById("inPlaca");
+    var tel = document.getElementById("inTel");
+    var ok = true;
+    var placaNorm = normalizarPlaca(placa.value);
+    var telNorm = tel.value.replace(/\D/g,"");
+
+    if(!nombre.value.trim()){
+      nombre.classList.add("err"); document.getElementById("errNombre").style.display="block"; ok=false;
+    } else limpiarError("inNombre");
+
+    if(placaNorm.length < 5 || placaActivaDuplicada(placaNorm)){
+      placa.classList.add("err"); document.getElementById("errPlaca").style.display="block"; ok=false;
+    } else limpiarError("inPlaca");
+
+    if(tel.value.trim() && telNorm.length !== 10){
+      tel.classList.add("err"); document.getElementById("errTel").style.display="block"; ok=false;
+    } else {
+      tel.classList.remove("err"); document.getElementById("errTel").style.display="none";
+    }
+
+    if(!ok){pasoRecepcion(!nombre.value.trim() || (tel.value.trim() && telNorm.length !== 10) ? 1 : 0);return;}
+    if(!document.getElementById("inLavado").value){pasoRecepcion(2);mostrarToast("Selecciona un servicio.");return;}
+    if(!validarCita()) return;
+
+    registrando = true;
+    document.getElementById("btnRegistrar").disabled = true;
+    try{
+      aplicarConfiguracion(await leerConfiguracion());
+      if(!validarCita()) return;
+      if(calcularPrecio() === null){ mostrarToast("Selecciona un servicio activo antes de registrar."); return; }
+
+    var tipo = document.getElementById("inTipo").value;
+    var lavado = document.getElementById("inLavado").value;
+    var respuestaPrecio = await fetch("/api/validar-ingreso", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({nombre:nombre.value.trim(),placa:placaNorm,telefono:telNorm,servicio:lavado,tipo:tipo,responsable_id:document.getElementById("inResp").value,bahia_id:document.getElementById("inBahia").value,frecuente:document.getElementById("inFrec").checked})});
+    var validacion = await respuestaPrecio.json();
+    if(!respuestaPrecio.ok) throw new Error(Object.values(validacion.errores || {}).join(" ") || "No se pudo validar el servicio.");
+    if(!validarCita()) return;
+    var precio = validacion.precio;
+    DURACION[lavado] = validacion.minutos;
+    folioNum++;
+
+    vehiculos.push({
+      folio: "CW-" + String(folioNum).padStart(4,"0"),
+      hora: ahora(),
+      horaCita: document.getElementById("inHora").value || "—",
+      fechaCita: document.getElementById("inFecha").value || fechaLocalISO(),
+      entrega: calcularEntrega(),
+      nombre: nombre.value.trim(),
+      telefono: telNorm,
+      placa: placaNorm,
+      sub: tipo + " · " + placaNorm,
+      lavado: lavado,
+      precio: precio,
+      marca: document.getElementById("inMarca").value.trim(),
+      modelo: document.getElementById("inModelo").value.trim(),
+      color: document.getElementById("inColor").value.trim(),
+      inspeccionIngreso: {suciedad:document.getElementById("inSuciedad").value,pertenenciasConfirmadas:document.getElementById("inPertenencias").checked,danos:document.getElementById("inDanos").value.trim(),fecha:new Date().toISOString()},
+      tarifaHistorica: precio,
+      duracionMinutos: validacion.minutos,
+      presente: false,
+      responsableId: document.getElementById("inResp").value,
+      bahiaId: document.getElementById("inBahia").value,
+      resp: catalogoRecurso("personal")[document.getElementById("inResp").value]?.nombre || "",
+      bahia: catalogoRecurso("bahias")[document.getElementById("inBahia").value]?.nombre || "",
+      pago: document.getElementById("inPago").value,
+      pagado: false,
+      cobros: [],
+      frec: document.getElementById("inFrec").checked,
+      km: document.getElementById("inKm").value.trim(),
+      notas: document.getElementById("inNotas").value.trim(),
+      estado: "Espera",
+      calif: 0,
+      creadoEn: new Date().toISOString(),
+      historial: [{estado:"Espera", fecha:new Date().toISOString()}]
+    });
+
+    if(!guardarDatos()){
+      vehiculos.pop();
+      folioNum--;
+      return;
+    }
+
+    nombre.value = ""; placa.value = ""; tel.value = "";
+    ["inMarca","inModelo","inColor","inDanos","inSuciedad"].forEach(function(id){document.getElementById(id).value="";});document.getElementById("inPertenencias").checked=false;pasoRecepcion(0);
+    document.getElementById("inNotas").value = "";
+    document.getElementById("inLavado").value = "";
+    document.getElementById("inTipo").selectedIndex = 0;
+    document.getElementById("inKm").value = "";
+    document.getElementById("inFrec").checked = false;
+    calcularPrecio();
+
+    render();
+    mostrarToast("Vehículo registrado · " + vehiculos[vehiculos.length-1].folio);
+    placa.focus();
+    }catch(e){
+      mostrarToast(e.message || "No se pudo registrar. Reintenta.");
+    }finally{
+      registrando = false;
+      document.getElementById("btnRegistrar").disabled = false;
+    }
+  }
+
+  function catalogoRecurso(campo){return CONFIG[campo] || {};}
+  function compatible(r,servicio){return r && r.activo && (r.servicios === null || r.servicios.includes(servicio));}
+  function actualizarRecursos(){
+    var servicio = document.getElementById("inLavado").value;
+    [["personal","inResp"],["bahias","inBahia"]].forEach(function(par){
+      var selector=document.getElementById(par[1]), previo=selector.value, catalogo=catalogoRecurso(par[0]);
+      var ids=Object.keys(catalogo).filter(function(id){
+        return compatible(catalogo[id],servicio) && !(typeof vehiculos !== "undefined" && vehiculos || []).some(function(v){
+          return v.estado === "En proceso" && (par[0] === "personal" ? (v.responsableId === id || (!v.responsableId && v.resp === catalogo[id].nombre)) : (v.bahiaId === id || (!v.bahiaId && v.bahia === catalogo[id].nombre)));
+        });
+      });
+      selector.innerHTML='<option value="">Selecciona una opción disponible</option>'+ids.map(function(id){return '<option value="'+escaparHTML(id)+'">'+escaparHTML(catalogo[id].nombre)+'</option>';}).join("");
+      selector.value=ids.includes(previo) ? previo : "";
+    });
+  }
+  function asignacionCompatible(v){
+    return [["personal",v.responsableId,v.resp],["bahias",v.bahiaId,v.bahia]].every(function(par){
+      var cat=catalogoRecurso(par[0]);
+      var r=par[1] ? cat[par[1]] : Object.values(cat).find(function(r){return r.nombre === par[2];});
+      return compatible(r,v.lavado);
+    });
+  }
+
+  async function iniciarServicio(i){
+    try{
+      aplicarConfiguracion(await leerConfiguracion());
+      cambiarEstado(i);
+    }catch(e){mostrarToast("No se pudo comprobar la disponibilidad. Reintenta.");}
+  }
+
+  function centavos(valor){return Math.round(Number(valor || 0)*100);}
+  function dinero(valor){return "$"+(valor/100).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function saldoCentavos(v){
+    if(!Array.isArray(v.cobros) && v.pagado) return 0;
+    return Math.max(0,centavos(v.precio)-(v.cobros || []).reduce(function(t,c){return t+c.centavos;},0));
+  }
+  function abrirCobro(i){
+    cobroIdx=i;var v=vehiculos[i],saldo=saldoCentavos(v);
+    document.getElementById("cobroResumen").textContent=v.nombre+" · "+v.folio+" · Saldo "+dinero(saldo);
+    document.getElementById("cobroImporte").value=(saldo/100).toFixed(2);
+    document.getElementById("cobroImporte").max=(saldo/100).toFixed(2);
+    document.getElementById("cobroMetodo").value=["Efectivo","Tarjeta","Transferencia"].includes(v.pago) ? v.pago : "Efectivo";
+    document.getElementById("cobroError").textContent="";
+    document.getElementById("cobroHistorial").innerHTML=(v.cobros || []).map(function(c,j){return '<p>'+escaparHTML(horaReal(c.hora))+" · "+escaparHTML(c.metodo)+" · "+dinero(c.centavos)+(c.centavos > 0 && !c.corregido ? ' <button class="btn" type="button" onclick="corregirCobro('+j+')">Anular este cobro</button>' : ' · '+escaparHTML(c.motivo || "Corregido"))+'</p>';}).join('');
+    document.getElementById("modalCobro").classList.add("show");
+  }
+  function cerrarCobro(){document.getElementById("modalCobro").classList.remove("show");cobroIdx=null;}
+  function registrarCobro(event){
+    event.preventDefault();if(cobroIdx === null) return;
+    var v=vehiculos[cobroIdx],importe=document.getElementById("cobroImporte").value,metodo=document.getElementById("cobroMetodo").value;
+    var recibido=centavos(importe);
+    if(!/^\d+(\.\d{1,2})?$/.test(importe) || !Number.isSafeInteger(recibido) || recibido <= 0 || recibido > saldoCentavos(v) || !["Efectivo","Tarjeta","Transferencia"].includes(metodo)){
+      document.getElementById("cobroError").textContent="Indica un importe positivo que no exceda el saldo y un método válido."; return;
+    }
+    var anterior=JSON.parse(JSON.stringify(v));
+    if(!v.cobros) v.cobros=[];
+    v.cobros.push({centavos:recibido,metodo:metodo,fecha:fechaLocalISO(),hora:new Date().toISOString()});
+    v.pagado=saldoCentavos(v) === 0;
+    if(v.pagado) v.fechaPago=fechaLocalISO();
+    if(!guardarDatos()){vehiculos[cobroIdx]=anterior;document.getElementById("cobroError").textContent="No se guardó el cobro. Reintenta.";return;}
+    cerrarCobro();render();mostrarToast("Cobro registrado: "+dinero(recibido));
+  }
+  function cancelarEntrega(){entregaPendiente=null;document.getElementById("modalSaldo").classList.remove("show");}
+  function confirmarEntregaPendiente(){var i=entregaPendiente;cancelarEntrega();if(i !== null && vehiculos[i]?.estado === "Listo") cambiarEstado(i,true);}
+  function corregirCobro(j){
+    if(cobroIdx === null) return;
+    var v=vehiculos[cobroIdx],c=v.cobros?.[j],motivo=document.getElementById("correccionMotivo").value.trim();
+    if(!c || c.centavos <= 0 || c.corregido || !motivo){document.getElementById("cobroError").textContent="Escribe el motivo y elige un cobro que no esté anulado.";return;}
+    var anterior=JSON.parse(JSON.stringify(v));
+    c.corregido=true;
+    v.cobros.push({centavos:-c.centavos,metodo:c.metodo,fecha:fechaLocalISO(),hora:new Date().toISOString(),reversaDe:j,motivo:motivo});
+    v.pagado=saldoCentavos(v) === 0;
+    if(!v.pagado) delete v.fechaPago;
+    if(!guardarDatos()){vehiculos[cobroIdx]=anterior;document.getElementById("cobroError").textContent="No se guardó la corrección.";return;}
+    render();abrirCobro(cobroIdx);mostrarToast("Corrección registrada; el saldo se actualizó.");
+  }
+  function fechaVenta(v){
+    if(!v.creadoEn || v.creadoEn === "demo") return "";
+    var d=new Date(v.creadoEn);if(isNaN(d.getTime())) return "";
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  function resumenPeriodo(prefijo){
+    var r={ventas:0,servicios:0,cobros:0,gastos:0,retiros:0,sinFecha:0};
+    vehiculos.forEach(function(v){
+      var fecha=fechaVenta(v);
+      if(fecha && fecha.startsWith(prefijo)){r.ventas+=centavos(v.precio);r.servicios++;}
+      else if(!fecha) r.sinFecha++;
+      (v.cobros || []).forEach(function(c){if(c.fecha.startsWith(prefijo)) r.cobros+=c.centavos;});
+    });
+    salidasCaja.forEach(function(s){if(s.fecha.startsWith(prefijo)) r[s.tipo === "Gasto" ? "gastos" : "retiros"]+=s.centavos;});
+    return r;
+  }
+  function mostrarReporte(){
+    var fecha=document.getElementById("reporteFecha").value || fechaLocalISO(),periodo=document.getElementById("reportePeriodo").value;
+    var prefijo=fecha.slice(0,periodo === "anio" ? 4 : periodo === "mes" ? 7 : 10),r=resumenPeriodo(prefijo);
+    document.getElementById("reporteVentas").innerHTML='<h3>'+escaparHTML(prefijo)+'</h3><p>Servicios vendidos: '+r.servicios+' · '+dinero(r.ventas)+'</p><p>Cobros netos: '+dinero(r.cobros)+'</p><p>Gastos: '+dinero(r.gastos)+'</p><p>Retiros: '+dinero(r.retiros)+'</p><p class="admin-help">Ventas por fecha de registro; cobros y salidas por fecha del movimiento. '+r.sinFecha+' registros sin fecha verificable (incluidos ejemplos) se excluyen de ventas. Los retiros no son gastos. Este resumen no calcula utilidad.</p>';
+  }
+  function resumenCaja(fecha){
+    fecha=fecha || fechaLocalISO();
+    var totales={Efectivo:0,Tarjeta:0,Transferencia:0},pendiente=0,anteriores=0,numero=0,salidasEfectivo=0;
+    vehiculos.forEach(function(v){
+      pendiente+=saldoCentavos(v);
+      if(!Array.isArray(v.cobros) && v.pagado) anteriores+=centavos(v.precio);
+      (v.cobros || []).forEach(function(c){if(c.fecha === fecha && Object.prototype.hasOwnProperty.call(totales,c.metodo)){totales[c.metodo]+=c.centavos;numero++;}});
+    });
+    salidasCaja.forEach(function(s){if(s.fecha === fecha && s.metodo === "Efectivo") salidasEfectivo+=s.centavos;});
+    return {totales:totales,pendiente:pendiente,anteriores:anteriores,numero:numero,salidasEfectivo:salidasEfectivo};
+  }
+  function abrirCaja(conservarFecha){
+    var campo=document.getElementById("cajaFecha");
+    if(!conservarFecha || !campo.value) campo.value=fechaLocalISO();
+    campo.max=fechaLocalISO();
+    var fecha=campo.value,r=resumenCaja(fecha),ultimo=cierresCaja.filter(function(c){return c.fecha === fecha;}).at(-1);
+    if(ultimo){document.getElementById("cajaFondo").value=(ultimo.fondo/100).toFixed(2);document.getElementById("cajaContado").value=(ultimo.contado/100).toFixed(2);}
+    document.getElementById("cajaResumen").innerHTML='<h3>'+escaparHTML(fecha)+'</h3>'+Object.keys(r.totales).map(function(m){return '<p>'+m+': <b>'+dinero(r.totales[m])+'</b></p>';}).join('')+'<p>Salidas en efectivo: '+dinero(r.salidasEfectivo)+'</p><p>Saldo pendiente acumulado actual: '+dinero(r.pendiente)+'</p><p class="admin-help">Pagos anteriores sin detalle: '+dinero(r.anteriores)+'. No se incluyen como cobros nuevos.</p>';
+    document.getElementById("cajaCierres").innerHTML=ultimo ? '<p>Último corte de este día: '+escaparHTML(horaReal(ultimo.hora))+' · esperado '+dinero(ultimo.esperado)+' · contado '+dinero(ultimo.contado)+' · diferencia '+dinero(ultimo.diferencia)+'</p><p>Si hubo movimientos posteriores, guarda una revisión del corte diario. Se conserva el historial.</p>' : '<p>Aún no hay corte guardado para este día.</p>';
+    document.getElementById("cajaSalidas").innerHTML=salidasCaja.filter(function(s){return s.fecha === fecha;}).map(function(s){return '<p>'+escaparHTML(s.tipo)+' · '+escaparHTML(s.motivo)+' · '+escaparHTML(s.metodo)+' · '+dinero(s.centavos)+'</p>';}).join('');
+    if(!document.getElementById("reporteFecha").value) document.getElementById("reporteFecha").value=fecha;
+    mostrarReporte();document.getElementById("modalCaja").classList.add("show");
+  }
+  function registrarSalida(){
+    var valor=document.getElementById("salidaImporte").value,tipo=document.getElementById("salidaTipo").value,metodo=document.getElementById("salidaMetodo").value,motivo=document.getElementById("salidaMotivo").value.trim();
+    if(!/^\d+(\.\d{1,2})?$/.test(valor) || !Number.isSafeInteger(centavos(valor)) || centavos(valor)<=0 || !motivo || !["Gasto","Retiro"].includes(tipo) || !["Efectivo","Tarjeta","Transferencia"].includes(metodo)){
+      document.getElementById("salidaMensaje").textContent="Captura tipo, importe positivo, método y motivo.";return;
+    }
+    salidasCaja.push({tipo:tipo,centavos:centavos(valor),metodo:metodo,motivo:motivo,fecha:fechaLocalISO(),hora:new Date().toISOString()});
+    if(!guardarDatos()){salidasCaja.pop();document.getElementById("salidaMensaje").textContent="No se guardó la salida.";return;}
+    document.getElementById("salidaImporte").value="";document.getElementById("salidaMotivo").value="";
+    abrirCaja();document.getElementById("salidaMensaje").textContent="Salida registrada para hoy.";
+  }
+  function guardarCierre(){
+    var fondo=document.getElementById("cajaFondo").value,contado=document.getElementById("cajaContado").value,fecha=document.getElementById("cajaFecha").value || fechaLocalISO();
+    if(fecha > fechaLocalISO() || ![fondo,contado].every(function(n){return /^\d+(\.\d{1,2})?$/.test(n) && Number.isSafeInteger(centavos(n));})){
+      document.getElementById("cajaMensaje").textContent="Selecciona un día no futuro y captura fondo y contado válidos.";return;
+    }
+    var r=resumenCaja(fecha),esperado=centavos(fondo)+r.totales.Efectivo-r.salidasEfectivo;
+    cierresCaja.push({fecha:fecha,hora:new Date().toISOString(),revision:cierresCaja.filter(function(c){return c.fecha === fecha;}).length+1,totales:r.totales,movimientos:r.numero,salidasEfectivo:r.salidasEfectivo,fondo:centavos(fondo),esperado:esperado,contado:centavos(contado),diferencia:centavos(contado)-esperado});
+    if(!guardarDatos()){cierresCaja.pop();document.getElementById("cajaMensaje").textContent="No se guardó el corte. Reintenta.";return;}
+    abrirCaja(true);document.getElementById("cajaMensaje").textContent="Corte diario guardado. Las revisiones conservan el historial.";
+  }
+
+  var accionTecnico=null;
+  function cambiarVista(vista){
+    document.getElementById("vistaRecepcion").hidden=vista === "tecnico";
+    document.getElementById("vistaTecnico").hidden=vista !== "tecnico";
+    if(document.body) document.body.classList.toggle("modo-tecnico",vista === "tecnico");
+    cargarSelectorTecnico();renderTecnico();
+  }
+  function cargarSelectorTecnico(){
+    var selector=document.getElementById("tecnicoActual"), previo=selector.value;
+    var cat=catalogoRecurso("personal");
+    selector.innerHTML='<option value="">Elige tu nombre</option>'+Object.keys(cat).map(function(id){return '<option value="'+escaparHTML(id)+'">'+escaparHTML(cat[id].nombre)+(cat[id].activo ? '' : ' · no disponible')+'</option>';}).join('');
+    selector.value=cat[previo] ? previo : "";
+  }
+  async function actualizarTecnico(){try{aplicarConfiguracion(await leerConfiguracion());cargarSelectorTecnico();renderTecnico();mostrarToast("Configuración actualizada; cola de este navegador.");}catch(e){mostrarToast("No se pudo actualizar. Reintenta.");}}
+  function asignadoTecnico(v){var id=document.getElementById("tecnicoActual").value,r=catalogoRecurso("personal")[id];return !!r && (v.responsableId ? v.responsableId === id : v.resp === r.nombre);}
+  function renderTecnico(){
+    var seleccion=document.getElementById("tecnicoActual").value;
+    var trabajos=vehiculos.map(function(v,i){return {v:v,i:i};}).filter(function(x){return asignadoTecnico(x.v) && x.v.estado !== "Entregado";});
+    var prioridad={"En proceso":0,"Espera":1,"Listo":2};trabajos.sort(function(a,b){return prioridad[a.v.estado]-prioridad[b.v.estado] || a.i-b.i;});
+    document.getElementById("tecnicoResumen").innerHTML=[['En proceso','En trabajo'],['Espera','En espera'],['Listo','Terminados']].map(function(par){return '<div><b>'+trabajos.filter(function(x){return x.v.estado === par[0];}).length+'</b><span>'+par[1]+'</span></div>';}).join('');
+    document.getElementById("tecnicoTrabajos").innerHTML=trabajos.length ? trabajos.map(function(x){
+      var v=x.v,i=x.i,activo=v.estado === "En proceso",espera=v.estado === "Espera";
+      var minutos=v.inicioReal ? Math.max(0,Math.floor(((v.pausaInicio ? new Date(v.pausaInicio).getTime() : Date.now())-new Date(v.inicioReal).getTime()-(v.pausaAcumuladaMs || 0))/60000)) : null;
+      var acciones=espera ? (v.presente ? '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;iniciar&quot;)">Iniciar trabajo</button>' : '<p class="tec-warning">Recepción debe confirmar la llegada.</p>') : activo ? (v.pausaInicio ? '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;reanudar&quot;)">Reanudar trabajo</button>' : '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;terminar&quot;)">Terminar trabajo</button><button class="btn" onclick="abrirAccionTecnico('+i+',&quot;pausa&quot;)">Pausar</button>') : '<p>Trabajo terminado. Recepción realiza la entrega.</p>';
+      return '<article class="tec-job"><div class="tec-job-header"><div><h2>'+escaparHTML(v.placa || v.sub || 'Sin placa')+'</h2><small>'+escaparHTML(v.folio)+' · '+escaparHTML(v.bahia)+'</small></div><span class="tec-badge">'+escaparHTML(v.pausaInicio ? 'Pausado' : v.estado)+'</span></div><div class="tec-job-body"><div class="tec-service">'+escaparHTML(v.lavado)+'</div><p>Cita '+escaparHTML(v.horaCita || '—')+' · Estimación '+escaparHTML(v.entrega || '—')+'</p>'+(minutos !== null ? '<p>Tiempo trabajado: '+minutos+' min</p>' : '')+'<p>'+escaparHTML(detalleVehiculo(v))+'</p><div class="tec-notes">'+escaparHTML(inspeccionVehiculo(v))+'</div><div class="tec-notes">'+escaparHTML(v.notas || 'Sin instrucciones adicionales')+'</div>'+(v.pausaInicio ? '<p class="tec-warning">Pausa: '+escaparHTML(v.motivoPausa)+'</p>' : '')+'<div class="tec-actions">'+acciones+'</div>'+(activo ? '<button class="btn" onclick="abrirAccionTecnico('+i+',&quot;incidencia&quot;)">Reportar incidencia</button>' : '')+(v.incidencias || []).map(function(n){return '<p class="tec-warning">'+escaparHTML(horaReal(n.fecha))+' · '+escaparHTML(n.motivo)+'</p>';}).join('')+'</div></article>';
+    }).join('') : '<div class="tec-empty">'+(seleccion ? 'No tienes trabajos pendientes en esta cola.' : 'Selecciona tu nombre para ver los trabajos asignados.')+'</div>';
+  }
+  async function accionTrabajo(i,accion){
+    var v=vehiculos[i];if(!v || !asignadoTecnico(v)) return;
+    if(accion === 'iniciar' && v.estado === 'Espera'){await iniciarServicio(i);renderTecnico();return;}
+    if(accion === 'terminar' && v.estado === 'En proceso'){cambiarEstado(i);return;}
+    if(accion === 'reanudar' && v.estado === 'En proceso' && v.pausaInicio){
+      var anterior=JSON.parse(JSON.stringify(v)),duracion=Math.max(0,Date.now()-new Date(v.pausaInicio).getTime());
+      v.pausaAcumuladaMs=(v.pausaAcumuladaMs || 0)+duracion;
+      if(v.finEstimado){v.finEstimado=new Date(new Date(v.finEstimado).getTime()+duracion).toISOString();v.entrega=horaReal(v.finEstimado);}
+      v.pausas=v.pausas || [];v.pausas.push({inicio:v.pausaInicio,fin:new Date().toISOString(),motivo:v.motivoPausa});delete v.pausaInicio;delete v.motivoPausa;
+      if(!guardarDatos()){vehiculos[i]=anterior;return;}render();
+    }
+  }
+  function abrirAccionTecnico(i,tipo){if(!asignadoTecnico(vehiculos[i]) || vehiculos[i].estado !== 'En proceso') return;accionTecnico={i:i,tipo:tipo};document.getElementById("tecAccionTitulo").textContent=tipo === 'pausa' ? 'Pausar trabajo' : 'Reportar incidencia';document.getElementById("tecMotivo").value='';document.getElementById("tecError").textContent='';document.getElementById("modalTecnico").classList.add('show');}
+  function cerrarAccionTecnico(){accionTecnico=null;document.getElementById("modalTecnico").classList.remove('show');}
+  function guardarAccionTecnico(e){
+    e.preventDefault();if(!accionTecnico) return;var i=accionTecnico.i,v=vehiculos[i],motivo=document.getElementById("tecMotivo").value.trim();
+    if(!motivo || motivo.length>500 || !asignadoTecnico(v) || v.estado !== 'En proceso'){document.getElementById("tecError").textContent='Revisa el trabajo y escribe un motivo.';return;}
+    var anterior=JSON.parse(JSON.stringify(v));
+    if(accionTecnico.tipo === 'pausa'){if(v.pausaInicio) return;v.pausaInicio=new Date().toISOString();v.motivoPausa=motivo;}else{v.incidencias=v.incidencias || [];v.incidencias.push({fecha:new Date().toISOString(),motivo:motivo});}
+    if(!guardarDatos()){vehiculos[i]=anterior;document.getElementById("tecError").textContent='No se guardó. Conservamos el motivo para reintentar.';return;}
+    cerrarAccionTecnico();render();mostrarToast('Actualización guardada en esta PC.');
+  }
+
+  function marcarLlegada(i){
+    var v = vehiculos[i];
+    if(!v || v.estado !== "Espera" || v.presente) return;
+    var anterior = JSON.parse(JSON.stringify(v));
+    v.presente = true;
+    v.llegadaReal = new Date().toISOString();
+    if(!guardarDatos()){vehiculos[i] = anterior; return;}
+    render();
+  }
+
+  function recursoOcupado(v){
+    return vehiculos.some(function(otro){return otro !== v && otro.estado === "En proceso" &&
+      ((otro.bahiaId && v.bahiaId ? otro.bahiaId === v.bahiaId : otro.bahia === v.bahia) || (otro.responsableId && v.responsableId ? otro.responsableId === v.responsableId : v.resp && otro.resp === v.resp));});
+  }
+
+  function siguientePresente(bahia,bahiaId){
+    return vehiculos.map(function(v,i){return {v:v,i:i};})
+      .filter(function(x){return x.v.estado === "Espera" && x.v.presente === true && (bahiaId && x.v.bahiaId ? x.v.bahiaId === bahiaId : x.v.bahia === bahia) && asignacionCompatible(x.v) && !recursoOcupado(x.v);})
+      .sort(function(a,b){return String(a.v.llegadaReal || a.v.creadoEn || "").localeCompare(String(b.v.llegadaReal || b.v.creadoEn || "")) || a.i-b.i;})[0];
+  }
+
+  function horaReal(iso){
+    if(!iso) return "";
+    var fecha = new Date(iso);
+    return isNaN(fecha.getTime()) ? "" : fecha.toLocaleString("es-MX", {day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  }
+
+  function cambiarEstado(i, permitirDeuda){
+    var anterior = JSON.parse(JSON.stringify(vehiculos[i]));
+    var actual = vehiculos[i].estado;
+    var idx = ESTADOS.indexOf(actual);
+    if(idx < 0 || idx >= ESTADOS.length - 1){
+      mostrarToast(actual === "Entregado" ? "Servicio cerrado · no puede regresar a espera" : "Estado no modificable");
+      return;
+    }
+    var v = vehiculos[i], momento = new Date();
+    if(actual === "Listo" && saldoCentavos(v) > 0 && permitirDeuda !== true){
+      entregaPendiente=i;
+      document.getElementById("saldoAviso").textContent=v.nombre+" tiene un saldo pendiente de "+dinero(saldoCentavos(v))+". Entregar no registra un cobro.";
+      document.getElementById("modalSaldo").classList.add("show"); return;
+    }
+    if(actual === "Espera"){
+      if(v.presente !== true){mostrarToast("Confirma la llegada del vehículo antes de iniciar."); return;}
+      if(!asignacionCompatible(v)){mostrarToast("La asignación ya no está disponible o no admite este servicio."); return;}
+      if(recursoOcupado(v)){mostrarToast("La bahía o el responsable están ocupados."); return;}
+      var minutos = v.duracionMinutos || DURACION[v.lavado];
+      if(!minutos){mostrarToast("No se conoce la duración de este servicio. Revisa su configuración."); return;}
+      v.inicioReal = momento.toISOString();
+      v.duracionMinutos = minutos;
+      var finEstimado = new Date(momento.getTime() + minutos*60000);
+      v.finEstimado = finEstimado.toISOString();
+      v.entrega = horaReal(v.finEstimado);
+    }
+    if(actual === "En proceso" && v.pausaInicio){mostrarToast("Reanuda el servicio antes de terminar."); return;}
+    if(actual === "En proceso") v.finReal = momento.toISOString();
+    if(actual === "Listo") v.entregaReal = momento.toISOString();
+    vehiculos[i].estado = ESTADOS[idx+1];
+    if(!vehiculos[i].historial) vehiculos[i].historial = [];
+    vehiculos[i].historial.push({estado:vehiculos[i].estado, fecha:new Date().toISOString()});
+    if(!guardarDatos()){
+      vehiculos[i] = anterior;
+      return;
+    }
+    render();
+    if(actual === "En proceso") mostrarToast("Servicio terminado. Retira el vehículo de la bahía antes de iniciar el siguiente.");
+  }
+
+  function render(){
+    var cont = document.getElementById("cola");
+    if(vehiculos.length === 0){
+      cont.innerHTML = '<div class="empty">Sin vehículos registrados. Captura una entrada para empezar.</div>';
+      actualizarMetricas();
+      renderTecnico();
+      return;
+    }
+    var html = "";
+    for(var i=0;i<vehiculos.length;i++){
+      var v = vehiculos[i];
+      var nombreSeguro = escaparHTML(v.nombre);
+      var subSeguro = escaparHTML(v.sub);
+      var folioSeguro = escaparHTML(v.folio);
+      var bahiaSegura = escaparHTML(v.bahia);
+      var respSeguro = escaparHTML(v.resp);
+      var estrellas = "";
+      if(v.calif > 0){
+        estrellas = '<span class="calif-ok">';
+        for(var e=0;e<v.calif;e++) estrellas += "★";
+        estrellas += " " + v.calif + ".0</span>";
+      } else if(v.estado === "Entregado" || v.estado === "Listo"){
+        estrellas = '<button class="btn-calif" onclick="abrirCalif('+i+')">Calificar</button>';
+      } else {
+        estrellas = '<span class="calif-na">—</span>';
+      }
+      var accion = v.estado === "Espera" ? (v.presente ? "Iniciar servicio ahora" : "Confirmar llegada") : v.estado === "En proceso" ? "Terminar servicio" : v.estado === "Listo" ? "Entregar al cliente" : "Entregado";
+      var siguiente = v.estado === "Listo" ? siguientePresente(v.bahia,v.bahiaId) : null;
+      var sugerencia = siguiente ? '<div class="sub2">Siguiente presente en '+bahiaSegura+': '+escaparHTML(siguiente.v.nombre)+' · '+escaparHTML(siguiente.v.lavado)+'<br>Confirma que la bahía esté despejada.<button class="btn" onclick="iniciarServicio('+siguiente.i+')">Iniciar este servicio ahora</button></div>' : "";
+      var tiempos = (v.inicioReal ? "Inicio: "+horaReal(v.inicioReal)+" · " : "") + (v.finReal ? "Terminado: "+horaReal(v.finReal)+" · " : "") + (v.entregaReal ? "Entregado: "+horaReal(v.entregaReal) : "");
+      var saldo=saldoCentavos(v);
+      var pagoTxt = saldo === 0 ? '<span class="pg pg-si">Pagado</span><button class="btn-calif" onclick="abrirCobro('+i+')">Ver cobros</button>' : '<span class="pg pg-no">'+(saldo < centavos(v.precio) ? 'Abonado · ' : '')+'Pendiente '+dinero(saldo)+'</span><button class="btn-calif" onclick="abrirCobro('+i+')">Cobrar / abonar</button>';
+      html += '<div class="queue-item">'
+        + '<div class="qi-time">'+escaparHTML(v.horaCita)+'<div class="folio">'+folioSeguro+'</div></div>'
+        + '<div class="qi-main"><div class="name">'+nombreSeguro+'</div>'
+        + '<div class="rec-vehicle">'+escaparHTML(detalleVehiculo(v))+'</div>'
+        + '<div class="sub">'+subSeguro+' · $'+Number(v.precio || 0)+(v.frec?' ★':'')+'</div>'
+        + '<div class="sub2">'+bahiaSegura+' · '+respSeguro+' · entrega estimada '+escaparHTML(v.entrega)+'</div><div class="sub2">'+escaparHTML(tiempos)+'</div>'+sugerencia+(v.pausaInicio ? '<p class="tec-warning">Pausado: '+escaparHTML(v.motivoPausa)+'</p>' : '')+(v.incidencias || []).map(function(n){return '<p class="tec-warning">Incidencia: '+escaparHTML(n.motivo)+'</p>';}).join('')+'</div>'
+        + '<div class="qi-right">'
+        + '<span class="tag '+escaparHTML((Object.prototype.hasOwnProperty.call(TAGCLASS,v.lavado) ? TAGCLASS[v.lavado] : "tag-est"))+'">'+escaparHTML(v.lavado)+'</span>'
+        + '<span>'+escaparHTML(v.estado)+(v.estado === "Espera" ? (v.presente ? ' · Presente' : ' · Pendiente de llegada') : '')+'</span>'
+        + '<button class="state '+escaparHTML(STCLASS[v.estado])+'" '+(v.estado === "Entregado" ? 'disabled' : '')+' onclick="'+(v.estado === "Espera" && !v.presente ? 'marcarLlegada' : v.estado === 'Espera' ? 'iniciarServicio' : 'cambiarEstado')+'('+i+')">'+accion+'</button>'
+        + '<div class="qi-meta">'+pagoTxt+' '+estrellas+'</div>'
+        + '</div></div>';
+    }
+    cont.innerHTML = html;
+    actualizarMetricas();
+    actualizarRecursos();
+    renderTecnico();
+  }
+
+  function actualizarMetricas(){
+    var proceso=0, listo=0, ingreso=0;
+    var hoy = fechaLocalISO();
+    for(var i=0;i<vehiculos.length;i++){
+      if(vehiculos[i].estado==="En proceso") proceso++;
+      if(vehiculos[i].estado==="Listo" || vehiculos[i].estado==="Entregado") listo++;
+      var v = vehiculos[i];
+      ingreso += (v.cobros || []).filter(function(c){return c.fecha === hoy;}).reduce(function(total,c){return total+c.centavos/100;},0);
+    }
+    var totalHoy = vehiculos.filter(function(v){
+      return !v.fechaCita || v.fechaCita === hoy || v.creadoEn === "demo";
+    }).length;
+    document.getElementById("mTotal").textContent = totalHoy;
+    document.getElementById("mProceso").textContent = proceso;
+    document.getElementById("mListo").textContent = listo;
+    document.getElementById("mIngreso").textContent = "$" + ingreso.toLocaleString();
+
+    var sumaC = 0, nC = 0;
+    for(var j=0;j<vehiculos.length;j++){
+      if(vehiculos[j].calif > 0){ sumaC += vehiculos[j].calif; nC++; }
+    }
+    document.getElementById("mCalif").textContent = nC ? (sumaC/nC).toFixed(1) + " ★" : "—";
+  }
+
+  function fechaLegible(valor){
+    if(!valor) return "hoy";
+    var p = valor.split("-");
+    var meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    return parseInt(p[2],10) + " de " + meses[parseInt(p[1],10)-1];
+  }
+
+  function enviarWhatsApp(tipo){
+    var nombre = document.getElementById("inNombre").value.trim() || "Doctor(a)";
+    var hora = document.getElementById("inHora").value || "10:30";
+    var fecha = fechaLegible(document.getElementById("inFecha").value);
+    var lavado = document.getElementById("inLavado").value;
+    var entrega = calcularEntrega();
+    var msg, titulo;
+
+    if(tipo === "recordatorio"){
+      titulo = "Prueba de recordatorio (1 día antes)";
+      msg =
+        "Hola " + nombre + " 👋\n\n" +
+        "Le recordamos que *mañana* tiene su cita en el Autolavado 🔔\n\n" +
+        "📅 Fecha: " + fecha + "\n" +
+        "🕐 Horario: " + hora + " hrs\n" +
+        "🚿 Servicio: " + lavado + "\n" +
+        "🚗 Entrega estimada: " + entrega + " hrs\n\n" +
+        "⚠️ Si no podrá asistir, este es el *último día* para cancelar sin costo. Después de hoy se aplicará un *costo extra* por cancelación.\n\n" +
+        "¡Lo esperamos!";
+    } else {
+      titulo = "Prueba de mensaje WhatsApp";
+      msg =
+        "Hola " + nombre + " 👋\n\n" +
+        "Su cita en el Autolavado quedó *agendada* ✅\n\n" +
+        "📅 Fecha: " + fecha + "\n" +
+        "🕐 Horario: " + hora + " hrs\n" +
+        "🚿 Servicio: " + lavado + "\n" +
+        "🚗 Entrega estimada: " + entrega + " hrs\n\n" +
+        "⚠️ *Política de cancelación:* si necesita cancelar, avísenos con *un día de anticipación*. De lo contrario se aplicará un *costo extra*.\n\n" +
+        "¡Gracias por su preferencia!";
+    }
+
+    document.getElementById("waTitulo").textContent = titulo;
+    document.getElementById("waTexto").textContent = msg;
+    document.getElementById("waHoraEnvio").textContent = ahora() + " ✓✓";
+    document.getElementById("modalWA").classList.add("show");
+  }
+
+  function cerrarWA(e){
+    if(e && e.target !== e.currentTarget) return;
+    document.getElementById("modalWA").classList.remove("show");
+  }
+
+  function confirmarEnvioWA(){
+    document.getElementById("modalWA").classList.remove("show");
+    mostrarToast("Simulación finalizada · no se envió ningún mensaje");
+  }
+
+  var calIdx = -1, calValor = 0;
+
+  function abrirCalif(i){
+    calIdx = i; calValor = 0;
+    var v = vehiculos[i];
+    document.getElementById("calCliente").textContent = v.folio + " · " + v.nombre + " · atendió " + v.resp;
+    document.getElementById("calComent").value = "";
+    document.getElementById("calTexto").textContent = "Toca una estrella";
+    document.getElementById("fallasBox").classList.remove("show");
+    var chips = document.querySelectorAll("#fallasBox .chip");
+    for(var k=0;k<chips.length;k++) chips[k].classList.remove("on");
+    pintarEstrellas(0);
+    document.getElementById("modalCal").classList.add("show");
+  }
+
+  function pintarEstrellas(n){
+    var st = document.querySelectorAll("#starBox .star");
+    for(var k=0;k<st.length;k++){
+      if(k < n) st[k].classList.add("on"); else st[k].classList.remove("on");
+    }
+  }
+
+  function setEstrellas(n){
+    calValor = n;
+    pintarEstrellas(n);
+    var msj = ["","Muy mal","Mal","Regular","Bien","Excelente"][n];
+    document.getElementById("calTexto").textContent = msj;
+    var fb = document.getElementById("fallasBox");
+    if(n <= 3){ fb.classList.add("show"); } else { fb.classList.remove("show"); }
+  }
+
+  function toggleChip(el){ el.classList.toggle("on"); }
+
+  function guardarCalif(){
+    if(calValor === 0){
+      document.getElementById("calTexto").textContent = "Selecciona una calificación primero";
+      document.getElementById("calTexto").style.color = "#A32D2D";
+      return;
+    }
+    document.getElementById("calTexto").style.color = "";
+    var anterior = JSON.parse(JSON.stringify(vehiculos[calIdx]));
+    vehiculos[calIdx].calif = calValor;
+    vehiculos[calIdx].comentarioCalif = document.getElementById("calComent").value.trim();
+    vehiculos[calIdx].fallas = Array.prototype.map.call(
+      document.querySelectorAll("#fallasBox .chip.on"), function(el){ return el.textContent; }
+    );
+    if(!guardarDatos()){
+      vehiculos[calIdx] = anterior;
+      return;
+    }
+    document.getElementById("modalCal").classList.remove("show");
+    render();
+    mostrarToast("Calificación registrada: " + calValor + " de 5");
+  }
+
+  function cerrarCal(e){
+    if(e && e.target !== e.currentTarget) return;
+    document.getElementById("modalCal").classList.remove("show");
+  }
+
+  function seccionAdmin(nombre){
+    ["Negocio","Servicios","Personal","Bahias"].forEach(function(n){
+      document.getElementById("panel"+n).hidden = n !== nombre;
+      var boton=document.getElementById("nav"+n);
+      if(boton.setAttribute) boton.setAttribute("aria-current",n === nombre ? "page" : "false");
+    });
+  }
+
+  async function abrirAdmin(){
+    seccionAdmin("Negocio");
+    document.getElementById("modalAdmin").classList.add("show");
+    document.getElementById("adminCampos").disabled = true;
+    document.getElementById("btnGuardarConfig").disabled = true;
+    document.getElementById("adminMensaje").textContent = "Cargando configuración…";
+    try{
+      var config = await leerConfiguracion();
+      aplicarConfiguracion(config);
+      versionAdmin = config.version;
+      document.getElementById("cfgNombre").value = config.nombre_negocio;
+      serviciosAdmin = Object.keys(config.servicios).map(function(n){return {nombre:n, original:n, ...config.servicios[n]};});
+      renderServiciosAdmin();
+      ["personal","bahias"].forEach(function(campo){recursosAdmin[campo]=Object.entries(config[campo] || {}).map(function(par){return {id:par[0],...par[1]};});});
+      renderRecursosAdmin();
+      document.getElementById("adminMensaje").textContent = "";
+      document.getElementById("adminCampos").disabled = false;
+      document.getElementById("btnGuardarConfig").disabled = false;
+    }catch(e){ document.getElementById("adminMensaje").textContent = e.message; }
+  }
+
+  function matrizServicio(s){
+    if(s.precios_vehiculo) return s.precios_vehiculo;
+    return Object.fromEntries(Object.keys(FACTOR).map(function(tipo){return [tipo,{precio:s.precio === "" ? "" : Math.round(Number(s.precio)*FACTOR[tipo]),
+      ...(s.vigente_desde ? {precio_programado:Math.round(Number(s.precio_programado)*FACTOR[tipo]),vigente_desde:s.vigente_desde} : {})}];}));
+  }
+  function capturarServiciosAdmin(){
+    serviciosAdmin = serviciosAdmin.map(function(s,i){return {
+      original:s.original,
+      nombre:document.getElementById("cfgServicio"+i).value,
+      minutos:document.getElementById("cfgMinutos"+i).value,
+      activo:document.getElementById("cfgActivo"+i).checked,
+      precios_vehiculo:Object.fromEntries(Object.keys(FACTOR).map(function(tipo,j){var pref="tarifa"+i+"_"+j;return [tipo,{
+        precio:document.getElementById(pref+"Precio").value,
+        precio_programado:document.getElementById(pref+"Nuevo").value,
+        vigente_desde:document.getElementById(pref+"Desde").value
+      }];}))
+    };});
+  }
+  function renderServiciosAdmin(){
+    document.getElementById("adminServicios").innerHTML = serviciosAdmin.map(function(s,i){
+      var matriz=matrizServicio(s);
+      return '<details class="admin-card" '+(!s.nombre ? 'open' : '')+'><summary>'+escaparHTML(s.nombre || 'Nuevo servicio')+'</summary><div class="admin-card-body"><div class="field"><label for="cfgServicio'+i+'">Nombre del servicio</label><input id="cfgServicio'+i+'" maxlength="100" required value="'+escaparHTML(s.nombre)+'"></div>'
+        + '<div class="field"><label for="cfgMinutos'+i+'">Duración (minutos)</label><input id="cfgMinutos'+i+'" type="number" min="1" max="1440" step="1" required value="'+escaparHTML(s.minutos)+'"></div>'
+        + '<div class="tarifas-grid">'+Object.keys(FACTOR).map(function(tipo,j){var p=matriz[tipo], pref="tarifa"+i+"_"+j;
+          return '<div class="tarifa-vehiculo"><b>'+escaparHTML(tipo)+'</b><label for="'+pref+'Precio">Precio ($)</label><input id="'+pref+'Precio" type="number" min="1" max="100000" step="1" required value="'+escaparHTML(p.precio)+'">'
+            + '<label for="'+pref+'Nuevo">Nuevo precio (opcional)</label><input id="'+pref+'Nuevo" type="number" min="1" max="100000" step="1" value="'+escaparHTML(p.precio_programado ?? "")+'">'
+            + '<label for="'+pref+'Desde">Aplicar desde</label><input id="'+pref+'Desde" type="datetime-local" step="60" value="'+escaparHTML(p.vigente_desde || "")+'"></div>';
+        }).join('')+'</div>'
+        + '<label><input id="cfgActivo'+i+'" type="checkbox" '+(s.activo !== false ? 'checked' : '')+'> Disponible para nuevas entradas</label></div></details>';
+    }).join("");
+  }
+  function agregarServicioAdmin(){
+    capturarServiciosAdmin();
+    serviciosAdmin.push({nombre:"",precio:"",minutos:30,activo:true});
+    renderServiciosAdmin();
+    document.getElementById("cfgServicio"+(serviciosAdmin.length-1)).focus();
+  }
+
+  function capturarRecursos(){
+    ["personal","bahias"].forEach(function(campo){recursosAdmin[campo].forEach(function(r,i){
+      var pref=campo+i;
+      r.nombre=document.getElementById(pref+"Nombre").value;
+      r.activo=document.getElementById(pref+"Activo").checked;
+      r.servicios=document.getElementById(pref+"Todos").checked ? null : Array.from(document.getElementById(pref+"Servicios").selectedOptions || []).map(function(o){return o.value;});
+    });});
+  }
+  function renderRecursosAdmin(){
+    ["personal","bahias"].forEach(function(campo){
+      document.getElementById(campo === "personal" ? "adminPersonal" : "adminBahias").innerHTML=recursosAdmin[campo].map(function(r,i){
+        var pref=campo+i;
+        return '<details class="admin-card" '+(!r.nombre ? 'open' : '')+'><summary>'+escaparHTML(r.nombre || (campo === 'personal' ? 'Nueva persona' : 'Nueva bahía'))+'</summary><div class="admin-card-body"><label for="'+pref+'Nombre">Nombre</label><input id="'+pref+'Nombre" required maxlength="100" value="'+escaparHTML(r.nombre)+'">'
+          + '<label><input type="checkbox" id="'+pref+'Activo" '+(r.activo ? 'checked' : '')+'> Disponible</label> '
+          + '<label><input type="checkbox" id="'+pref+'Todos" '+(r.servicios === null ? 'checked' : '')+'> Todos los servicios, incluidos los nuevos</label>'
+          + '<label for="'+pref+'Servicios">Servicios específicos (Ctrl + clic para varios)</label><select multiple id="'+pref+'Servicios">'+Object.keys(CONFIG.servicios).map(function(n){return '<option value="'+escaparHTML(n)+'" '+(r.servicios && r.servicios.includes(n) ? 'selected' : '')+'>'+escaparHTML(n)+'</option>';}).join('')+'</select></div></details>';
+      }).join('');
+    });
+  }
+  function agregarRecurso(campo){
+    capturarRecursos();
+    recursosAdmin[campo].push({id:campo+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),nombre:'',activo:true,servicios:null});
+    renderRecursosAdmin();
+  }
+
+  async function guardarConfiguracion(event){
+    event.preventDefault();
+    var formulario=document.getElementById("formAdmin");
+    if(formulario.querySelector){
+      var invalido=formulario.querySelector("input:invalid, select:invalid, textarea:invalid");
+      if(invalido){
+        var panel=invalido.closest("[data-admin-panel]");
+        if(panel) seccionAdmin(panel.dataset.adminPanel);
+        var tarjeta=invalido.closest("details"); if(tarjeta) tarjeta.open=true;
+        invalido.reportValidity(); return;
+      }
+    }
+    if(guardandoConfig || document.getElementById("btnGuardarConfig").disabled) return;
+    capturarServiciosAdmin();
+    var data = {nombre_negocio:document.getElementById("cfgNombre").value.trim(), version:versionAdmin, servicios:Object.create(null)};
+    var nombres = new Set();
+    for(var s of serviciosAdmin){
+      var nombre = s.nombre.trim(), clave = nombre.toLocaleLowerCase();
+      if(!nombre || nombres.has(clave) || ["__proto__","constructor","prototype"].includes(clave)){
+        document.getElementById("adminMensaje").textContent = "Cada servicio debe tener un nombre único."; return;
+      }
+      nombres.add(clave);
+      var matriz = {};
+      for(var tipo of Object.keys(FACTOR)){
+        var p=s.precios_vehiculo[tipo];
+        matriz[tipo]={precio:Number(p.precio)};
+        if(p.precio_programado !== "" || p.vigente_desde){
+          if(!p.precio_programado || !p.vigente_desde){document.getElementById("adminMensaje").textContent="Completa el nuevo precio y la fecha de "+nombre+" / "+tipo; return;}
+          matriz[tipo].precio_programado=Number(p.precio_programado);
+          matriz[tipo].vigente_desde=p.vigente_desde;
+        }
+      }
+      data.servicios[nombre]={precio:matriz.Auto.precio,minutos:Number(s.minutos),activo:s.activo,precios_vehiculo:matriz};
+    }
+    capturarRecursos();
+    ["personal","bahias"].forEach(function(campo){data[campo]=Object.fromEntries(recursosAdmin[campo].map(function(r){return [r.id,{nombre:r.nombre,activo:r.activo,servicios:r.servicios === null ? null : r.servicios.map(function(n){var servicio=serviciosAdmin.find(function(s){return s.original === n;}); return servicio ? servicio.nombre.trim() : n;})}];}));});
+    guardandoConfig = true;
+    document.getElementById("btnGuardarConfig").disabled = true;
+    document.getElementById("adminCampos").disabled = true;
+    document.getElementById("adminMensaje").textContent = "Guardando…";
+    try{
+      var respuesta = await fetch("/api/config", {method:"PUT", headers:{"Content-Type":"application/json", "X-Autolavado":"config"}, body:JSON.stringify(data)});
+      var resultado = await respuesta.json();
+      if(!respuesta.ok) throw new Error(resultado.error || "No se pudo guardar la configuración.");
+      aplicarConfiguracion(resultado);
+      document.getElementById("modalAdmin").classList.remove("show");
+      mostrarToast("Configuración guardada en esta PC");
+    }catch(e){ document.getElementById("adminMensaje").textContent = e.message || "No se pudo guardar. Reintenta."; }
+    finally{
+      guardandoConfig = false;
+      document.getElementById("btnGuardarConfig").disabled = false;
+      document.getElementById("adminCampos").disabled = false;
+    }
+  }
+  function cerrarAdmin(e){
+    if(guardandoConfig) return;
+    if(e && e.target !== e.currentTarget) return;
+    document.getElementById("modalAdmin").classList.remove("show");
+  }
+
+  var toastTimer;
+  function mostrarToast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2500);
+  }
+
+  document.getElementById("inNombre").addEventListener("input", function(){ limpiarError("inNombre"); });
+  document.getElementById("inPlaca").addEventListener("input", function(){ limpiarError("inPlaca"); });
+  document.getElementById("inTel").addEventListener("input", function(){
+    this.classList.remove("err"); document.getElementById("errTel").style.display="none";
+  });
+
+  function exportarDatos(){
+    var blob = new Blob([JSON.stringify({version:"QA v2", exportado:new Date().toISOString(), vehiculos:vehiculos, cierresCaja:cierresCaja, salidasCaja:salidasCaja}, null, 2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "autolavado_respaldo_" + new Date().toISOString().slice(0,10) + ".json";
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    mostrarToast("Respaldo generado");
+  }
+
+  document.getElementById("inFrec").addEventListener("change", calcularPrecio);
+  document.getElementById("inHora").addEventListener("change", calcularEntrega);
+
+  document.getElementById("fechaHoy").textContent = new Date().toLocaleDateString("es-MX", {
+    weekday:"long", year:"numeric", month:"long", day:"numeric"
+  });
+  document.getElementById("inFecha").min = fechaLocalISO();
+  document.getElementById("inHora").value = ahora();
+  pasoRecepcion(0);
+  aplicarConfiguracion(CONFIG);
+  render();
+
+  // Carga el estado real desde la base de datos y vuelve a dibujar.
+  (async function(){
+    await cargarEstadoServidor();
+    render();
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+"""Capa de almacenamiento del Autolavado.
+
+Guarda la configuración del negocio y el estado de operación (vehículos,
+cobros, cortes de caja y salidas) en una base de datos.
+
+Diseño clave para la donación:
+- Si existe la variable de entorno DATABASE_URL (PostgreSQL de Render),
+  se usa PostgreSQL.
+- Si no existe, se usa un archivo SQLite local (para desarrollo y pruebas).
+Así, cuando la app pase a nombre del amigo, solo se cambia DATABASE_URL
+por la base de datos de ellos; no se toca una sola línea de código.
+
+El estado de operación se guarda como un único documento JSON por motivos
+de simplicidad y para no romper la interfaz existente, que ya maneja todo
+el estado como un objeto {folioNum, vehiculos, cierresCaja, salidasCaja}.
+"""
+
+import json
+import os
+from datetime import datetime, timezone
+
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+USA_POSTGRES = DATABASE_URL.startswith("postgres")
+
+# Clave única del documento de estado (una sola sucursal por ahora).
+ESTADO_ID = "principal"
+
+CONFIG_POR_DEFECTO = {
+    "version": 1,
+    "nombre_negocio": "Autolavado",
+    "tipos_vehiculo": {"Auto": 1, "SUV": 1.3, "Camioneta": 1.5, "Moto": 0.6},
+    "estados": ["Espera", "En proceso", "Listo", "Entregado"],
+    "servicios": {
+        "Express":  {"precio": 80,  "minutos": 15, "activo": True},
+        "Estándar": {"precio": 150, "minutos": 30, "activo": True},
+        "Profundo": {"precio": 350, "minutos": 90, "activo": True},
+    },
+    "personal": {
+        "p1": {"nombre": "Irving", "activo": True, "servicios": None},
+        "p2": {"nombre": "Román",  "activo": True, "servicios": None},
+        "p3": {"nombre": "Alex",   "activo": True, "servicios": None},
+    },
+    "bahias": {
+        "b1": {"nombre": "Bahía 1", "activo": True, "servicios": None},
+        "b2": {"nombre": "Bahía 2", "activo": True, "servicios": None},
+        "b3": {"nombre": "Bahía 3", "activo": True, "servicios": None},
+    },
+}
+
+ESTADO_POR_DEFECTO = {
+    "folioNum": 3,
+    "vehiculos": [
+        {"folio": "CW-0001", "hora": "09:15", "horaCita": "09:15", "entrega": "09:45",
+         "nombre": "Dr. Ana Torres", "sub": "Auto · MPV-556", "placa": "MPV-556",
+         "lavado": "Estándar", "precio": 150, "resp": "Irving", "bahia": "Bahía 1",
+         "pago": "Efectivo", "pagado": True, "frec": False, "km": "",
+         "estado": "Entregado", "calif": 5, "creadoEn": "demo"},
+        {"folio": "CW-0002", "hora": "09:50", "horaCita": "09:50", "entrega": "10:05",
+         "nombre": "Dr. Carlos Núñez", "sub": "SUV · JFD-703", "placa": "JFD-703",
+         "lavado": "Express", "precio": 104, "resp": "Román", "bahia": "Bahía 2",
+         "pago": "Tarjeta", "pagado": True, "frec": True, "km": "",
+         "estado": "Listo", "calif": 0, "creadoEn": "demo"},
+        {"folio": "CW-0003", "hora": "10:10", "horaCita": "10:10", "entrega": "10:40",
+         "nombre": "Dra. María López", "sub": "Auto · HTR-119", "placa": "HTR-119",
+         "lavado": "Estándar", "precio": 150, "resp": "Alex", "bahia": "Bahía 3",
+         "pago": "Por definir", "pagado": False, "frec": False, "km": "",
+         "estado": "En proceso", "calif": 0, "creadoEn": "demo"},
+    ],
+    "cierresCaja": [],
+    "salidasCaja": [],
+}
+
+
+# ---------------------------------------------------------------------------
+# Conexión
+# ---------------------------------------------------------------------------
+def _ruta_sqlite():
+    base = os.environ.get("SQLITE_PATH")
+    if base:
+        return base
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "autolavado.db")
+
+
+def _conectar():
+    """Devuelve (conexion, marcador) según el motor disponible."""
+    if USA_POSTGRES:
+        import psycopg
+        url = DATABASE_URL
+        # Render a veces entrega 'postgres://'; psycopg acepta 'postgresql://'.
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://"):]
+        conn = psycopg.connect(url)
+        return conn, "%s"
+    import sqlite3
+    conn = sqlite3.connect(_ruta_sqlite())
+    return conn, "?"
+
+
+def inicializar():
+    """Crea las tablas si no existen y siembra config/estado por defecto.
+
+    Primero crea las tablas y hace commit; luego usa las funciones públicas
+    (cada una con su propia conexión) para sembrar. Así se evita reutilizar
+    una conexión/cursor en medio de una transacción, que da problemas en
+    PostgreSQL.
+    """
+    conn, _ = _conectar()
+    try:
+        cur = conn.cursor()
+        if USA_POSTGRES:
+            cur.execute("CREATE TABLE IF NOT EXISTS configuracion (id TEXT PRIMARY KEY, datos JSONB NOT NULL)")
+            cur.execute("CREATE TABLE IF NOT EXISTS estado (id TEXT PRIMARY KEY, datos JSONB NOT NULL, actualizado TIMESTAMPTZ NOT NULL)")
+        else:
+            cur.execute("CREATE TABLE IF NOT EXISTS configuracion (id TEXT PRIMARY KEY, datos TEXT NOT NULL)")
+            cur.execute("CREATE TABLE IF NOT EXISTS estado (id TEXT PRIMARY KEY, datos TEXT NOT NULL, actualizado TEXT NOT NULL)")
+        conn.commit()
+    finally:
+        conn.close()
+
+    # Sembrar valores por defecto solo si aún no existen (conexiones propias).
+    if leer_configuracion() is None:
+        guardar_configuracion(CONFIG_POR_DEFECTO)
+    if leer_estado() is None:
+        guardar_estado(ESTADO_POR_DEFECTO)
+
+
+# ---------------------------------------------------------------------------
+# Serialización según motor
+# ---------------------------------------------------------------------------
+def _serializar(datos):
+    return datos if USA_POSTGRES else json.dumps(datos, ensure_ascii=False)
+
+
+def _deserializar(valor):
+    if valor is None:
+        return None
+    if isinstance(valor, (dict, list)):
+        return valor
+    return json.loads(valor)
+
+
+# ---------------------------------------------------------------------------
+# Configuración
+# ---------------------------------------------------------------------------
+def leer_configuracion(conn=None):
+    propia = conn is None
+    if propia:
+        conn, marc = _conectar()
+    else:
+        marc = "%s" if USA_POSTGRES else "?"
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT datos FROM configuracion WHERE id = {marc}", ("cfg",))
+        fila = cur.fetchone()
+        return _deserializar(fila[0]) if fila else None
+    finally:
+        if propia:
+            conn.close()
+
+
+def _guardar_config_interno(datos, conn):
+    marc = "%s" if USA_POSTGRES else "?"
+    cur = conn.cursor()
+    payload = _serializar(datos)
+    if USA_POSTGRES:
+        cur.execute(
+            "INSERT INTO configuracion (id, datos) VALUES (%s, %s) "
+            "ON CONFLICT (id) DO UPDATE SET datos = EXCLUDED.datos",
+            ("cfg", json.dumps(datos, ensure_ascii=False)),
+        )
+    else:
+        cur.execute(
+            f"INSERT INTO configuracion (id, datos) VALUES ({marc}, {marc}) "
+            "ON CONFLICT(id) DO UPDATE SET datos = excluded.datos",
+            ("cfg", payload),
+        )
+
+
+def guardar_configuracion(datos):
+    conn, _ = _conectar()
+    try:
+        _guardar_config_interno(datos, conn=conn)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Estado de operación
+# ---------------------------------------------------------------------------
+def leer_estado(conn=None):
+    propia = conn is None
+    if propia:
+        conn, marc = _conectar()
+    else:
+        marc = "%s" if USA_POSTGRES else "?"
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT datos FROM estado WHERE id = {marc}", (ESTADO_ID,))
+        fila = cur.fetchone()
+        return _deserializar(fila[0]) if fila else None
+    finally:
+        if propia:
+            conn.close()
+
+
+def _guardar_estado_interno(datos, conn):
+    marc = "%s" if USA_POSTGRES else "?"
+    ahora = datetime.now(timezone.utc).isoformat()
+    cur = conn.cursor()
+    if USA_POSTGRES:
+        cur.execute(
+            "INSERT INTO estado (id, datos, actualizado) VALUES (%s, %s, %s) "
+            "ON CONFLICT (id) DO UPDATE SET datos = EXCLUDED.datos, actualizado = EXCLUDED.actualizado",
+            (ESTADO_ID, json.dumps(datos, ensure_ascii=False), ahora),
+        )
+    else:
+        cur.execute(
+            f"INSERT INTO estado (id, datos, actualizado) VALUES ({marc}, {marc}, {marc}) "
+            "ON CONFLICT(id) DO UPDATE SET datos = excluded.datos, actualizado = excluded.actualizado",
+            (ESTADO_ID, _serializar(datos), ahora),
+        )
+
+
+def guardar_estado(datos):
+    conn, _ = _conectar()
+    try:
+        _guardar_estado_interno(datos, conn=conn)
+        conn.commit()
+    finally:
+        conn.close()
