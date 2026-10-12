@@ -660,6 +660,8 @@
 
     if(!ok){pasoRecepcion(!nombre.value.trim() || (tel.value.trim() && telNorm.length !== 10) ? 1 : 0);return;}
     if(!document.getElementById("inLavado").value){pasoRecepcion(2);mostrarToast("Selecciona un servicio.");return;}
+    if(!document.getElementById("inResp").value){pasoRecepcion(2);mostrarToast("Selecciona un responsable disponible.");return;}
+    if(!document.getElementById("inBahia").value){pasoRecepcion(2);mostrarToast("Selecciona una bahía disponible.");return;}
     if(!validarCita()) return;
 
     registrando = true;
