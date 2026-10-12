@@ -1631,17 +1631,27 @@
       ...(s.vigente_desde ? {precio_programado:Math.round(Number(s.precio_programado)*FACTOR[tipo]),vigente_desde:s.vigente_desde} : {})}];}));
   }
   function capturarServiciosAdmin(){
-    serviciosAdmin = serviciosAdmin.map(function(s,i){return {
-      original:s.original,
-      nombre:document.getElementById("cfgServicio"+i).value,
-      minutos:document.getElementById("cfgMinutos"+i).value,
-      activo:document.getElementById("cfgActivo"+i).checked,
-      precios_vehiculo:Object.fromEntries(Object.keys(FACTOR).map(function(tipo,j){var pref="tarifa"+i+"_"+j;return [tipo,{
-        precio:document.getElementById(pref+"Precio").value,
-        precio_programado:document.getElementById(pref+"Nuevo").value,
-        vigente_desde:document.getElementById(pref+"Desde").value
-      }];}))
-    };});
+    serviciosAdmin = serviciosAdmin.map(function(s,i){
+      var campoNombre = document.getElementById("cfgServicio"+i);
+      // Si los campos de este servicio no están en el DOM (otra pestaña, no
+      // renderizado), conservamos el servicio tal cual sin leer del DOM.
+      if(!campoNombre) return s;
+      return {
+        original:s.original,
+        nombre:campoNombre.value,
+        minutos:(document.getElementById("cfgMinutos"+i) || {}).value || s.minutos,
+        activo:(document.getElementById("cfgActivo"+i) || {}).checked,
+        precios_vehiculo:Object.fromEntries(Object.keys(FACTOR).map(function(tipo,j){
+          var pref="tarifa"+i+"_"+j;
+          var cp=document.getElementById(pref+"Precio"), cn=document.getElementById(pref+"Nuevo"), cd=document.getElementById(pref+"Desde");
+          return [tipo,{
+            precio: cp ? cp.value : "",
+            precio_programado: cn ? cn.value : "",
+            vigente_desde: cd ? cd.value : ""
+          }];
+        }))
+      };
+    });
   }
   function renderServiciosAdmin(){
     document.getElementById("adminServicios").innerHTML = serviciosAdmin.map(function(s,i){
@@ -1757,10 +1767,18 @@
       }
       nombres.add(clave);
       var matriz = {};
+      // Protección: si el servicio no trae su matriz de precios (p. ej. porque
+      // se guardó desde otra pestaña), la reconstruimos desde el precio base.
+      var pv = s.precios_vehiculo;
+      if(!pv || typeof pv !== "object"){
+        var base = Number(s.precio_actual ?? s.precio ?? 0);
+        pv = {};
+        Object.keys(FACTOR).forEach(function(tipo){ pv[tipo] = {precio: Math.round(base*FACTOR[tipo])}; });
+      }
       for(var tipo of Object.keys(FACTOR)){
-        var p=s.precios_vehiculo[tipo];
+        var p = pv[tipo] || {precio: Math.round(Number(s.precio_actual ?? s.precio ?? 0)*FACTOR[tipo])};
         matriz[tipo]={precio:Number(p.precio)};
-        if(p.precio_programado !== "" || p.vigente_desde){
+        if(p.precio_programado !== "" && p.precio_programado != null || p.vigente_desde){
           if(!p.precio_programado || !p.vigente_desde){document.getElementById("adminMensaje").textContent="Completa el nuevo precio y la fecha de "+nombre+" / "+tipo; return;}
           matriz[tipo].precio_programado=Number(p.precio_programado);
           matriz[tipo].vigente_desde=p.vigente_desde;
@@ -1782,7 +1800,9 @@
       var respuesta = await fetch("/api/config", {method:"PUT", headers:{"Content-Type":"application/json", "X-Autolavado":"config"}, body:JSON.stringify(data)});
       var resultado = await respuesta.json();
       if(!respuesta.ok) throw new Error(resultado.error || "No se pudo guardar la configuración.");
-      aplicarConfiguracion(resultado);
+      // El endpoint devuelve {ok, version, config}; aplicamos el config.
+      aplicarConfiguracion(resultado.config || resultado);
+      if(resultado.version) versionAdmin = resultado.version;
       document.getElementById("modalAdmin").classList.remove("show");
       mostrarToast("Configuración guardada en esta PC");
     }catch(e){ document.getElementById("adminMensaje").textContent = e.message || "No se pudo guardar. Reintenta."; }
