@@ -245,6 +245,33 @@ def test_monitor_carga(cliente):
     assert b"Central de lavado" in r.data
 
 
+def test_api_monitor_publico_sin_login(cliente_sin_login):
+    # La pantalla de central de lavado no tiene sesión: el endpoint debe
+    # responder 200 (público) y no 401, que era el bug de "no se ven los autos".
+    r = cliente_sin_login.get("/api/monitor")
+    assert r.status_code == 200
+    d = r.get_json()
+    assert d["ok"] is True
+    assert isinstance(d["vehiculos"], list)
+    assert isinstance(d["fases"], list)
+
+
+def test_api_monitor_solo_en_proceso(cliente):
+    # Guarda un auto en proceso y uno en espera; el monitor solo ve el activo.
+    cliente.put("/api/estado", json={"folioNum": 2, "vehiculos": [
+        {"folio": "CW-0101", "placa": "AAA-111", "estado": "En proceso",
+         "faseActual": 1, "tipoVehiculo": "SUV", "creadoEn": "2026-10-12T10:00:00"},
+        {"folio": "CW-0102", "placa": "BBB-222", "estado": "Espera",
+         "creadoEn": "2026-10-12T10:05:00"},
+    ]})
+    r = cliente.get("/api/monitor")
+    assert r.status_code == 200
+    vs = r.get_json()["vehiculos"]
+    placas = [v["placa"] for v in vs]
+    assert "AAA-111" in placas and "BBB-222" not in placas
+    assert vs[0]["tipoVehiculo"] == "SUV"
+
+
 # --- Optimización: guardado ligero de activos ---
 def test_patch_activos_conserva_historico(cliente):
     # Carga histórico (día pasado) + estado inicial

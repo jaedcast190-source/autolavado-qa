@@ -181,6 +181,51 @@ def monitor():
     return render_template("monitor.html", configuracion=config)
 
 
+@app.get("/api/monitor")
+def api_monitor():
+    """Datos públicos de solo lectura para la pantalla de central de lavado.
+    El monitor es una pantalla sin sesión (una TV en el local), por eso NO
+    puede usar /api/estado, que requiere login. Aquí se exponen únicamente
+    los vehículos en proceso y con los campos mínimos para mostrarlos."""
+    estado = db.leer_estado() or {}
+    config = db.leer_configuracion() or db.CONFIG_POR_DEFECTO
+    fases = [{"nombre": f.get("nombre", ""), "activo": f.get("activo", True)}
+             for f in config.get("fases", []) if f.get("activo", True)]
+    en_proceso = []
+    for v in estado.get("vehiculos", []):
+        if v.get("estado") != "En proceso":
+            continue
+        en_proceso.append({
+            "folio": v.get("folio"),
+            "placa": v.get("placa"),
+            "nombre": v.get("nombre"),
+            "sub": v.get("sub"),
+            "lavado": v.get("lavado"),
+            "bahia": v.get("bahia"),
+            "resp": v.get("resp"),
+            "estado": v.get("estado"),
+            "faseActual": v.get("faseActual", 0),
+            "inicioReal": v.get("inicioReal"),
+            "pausaInicio": v.get("pausaInicio"),
+            # tipo de vehículo para elegir la silueta correcta
+            "tipoVehiculo": v.get("tipoVehiculo") or v.get("tipo") or _tipo_desde_sub(v.get("sub")),
+        })
+    return jsonify(ok=True, nombre_negocio=config.get("nombre_negocio", "Autolavado"),
+                   fases=fases, vehiculos=en_proceso)
+
+
+def _tipo_desde_sub(sub):
+    """Deduce el tipo de vehículo (Auto/SUV/Camioneta/Moto) a partir del campo
+    'sub' tipo 'SUV · JFD-703' cuando no viene el tipo explícito."""
+    if not isinstance(sub, str):
+        return "Auto"
+    inicio = sub.split("·")[0].strip().lower()
+    for t in ("camioneta", "suv", "moto", "auto"):
+        if t in inicio:
+            return t.capitalize() if t != "suv" else "SUV"
+    return "Auto"
+
+
 @app.get("/qr/<codigo>.png")
 def qr_png(codigo):
     """Genera el QR del lado del servidor (sin depender de internet del cliente).
@@ -234,6 +279,7 @@ def api_seguimiento(codigo):
         "faseActual": vehiculo.get("faseActual", 0),
         "pausado": bool(vehiculo.get("pausaInicio")),
         "calif": vehiculo.get("calif", 0),
+        "tipoVehiculo": vehiculo.get("tipoVehiculo") or vehiculo.get("tipo") or _tipo_desde_sub(vehiculo.get("sub")),
         "negocio": config.get("nombre_negocio", "Autolavado"),
         "fases": [{"nombre": f["nombre"]} for f in fases],
     }
