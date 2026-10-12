@@ -165,31 +165,80 @@
   .btn:disabled{opacity:.55;cursor:wait;}
   @media(max-width:820px){ .grid{grid-template-columns:1fr;} }
   .vista-nav{max-width:1100px;margin:16px auto;display:flex;gap:10px;padding:0 20px;}
-  #vistaTecnico{max-width:1100px;margin:auto;padding:0 20px 40px;color:#182b40;}
-  .modo-tecnico{background:#eff5fa;}
+  /* ===== VISTA DEL TÉCNICO — tema premium oscuro ===== */
+  #vistaTecnico{max-width:760px;margin:auto;padding:0 16px 48px;color:var(--t-blanco);
+    --t-carbon:#0B0E11; --t-carbon2:#121820; --t-linea:#1d2733; --t-agua:#22D3EE; --t-agua2:#0EA5B5; --t-teal:#0b8a9c;
+    --t-blanco:#F3F7FA; --t-suave:#8A9AA8; --t-tenue:#56687a; --t-oro:#D4A84B; --t-verde:#34D399; --t-ambar:#F4B740; --t-rojo:#F26D6D;}
+  .modo-tecnico{background:
+    radial-gradient(130% 70% at 50% -5%, #16202b 0%, rgba(11,14,17,0) 55%), #0B0E11 !important;}
   .modo-tecnico .admin-action{display:none;}
-  .tec-head{padding:28px;border-radius:22px;background:linear-gradient(125deg,#10243c,#16475c);color:white;}
-  .tec-eyebrow{font-size:12px;letter-spacing:2px;color:#80e4ef;font-weight:700;}
-  .tec-head h1{font-size:clamp(26px,4vw,38px);line-height:1.2;margin:12px 0;}
-  .tec-head p{color:#cbdce8;font-size:15px;}
-  .tec-toolbar{display:flex;align-items:end;gap:12px;margin:20px 0 10px;}.tec-toolbar>div{flex:1;}.tec-toolbar label{display:block;font-weight:600;margin-bottom:6px;}
-  .tec-local{font-size:12px;color:#526579;margin-bottom:16px;}
-  .tec-stats{display:flex;gap:12px;margin:16px 0;}.tec-stats>div{background:white;padding:14px;border-radius:14px;flex:1;border:1px solid #dce5ed;}.tec-stats b{display:block;font-size:25px;}.tec-stats span{font-size:12px;}
-  .tec-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
-  .tec-job{background:white;border:1px solid #dce5ed;border-radius:18px;overflow:hidden;box-shadow:0 4px 16px #17365108;min-width:0;}
-  .tec-job-header{padding:18px;background:#f8fafc;border-bottom:1px solid #e3eaf0;display:flex;justify-content:space-between;align-items:start;gap:8px;}.tec-job h2{font-size:25px;letter-spacing:1px;overflow-wrap:anywhere;}
-  .tec-badge{background:#e0f3f5;color:#105b69;padding:6px 10px;border-radius:20px;font-size:12px;font-weight:700;}
-  .tec-job-body{padding:18px;display:grid;gap:12px;}.tec-service{font-size:19px;font-weight:700;}.tec-notes{background:#f1f5f9;border-radius:10px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;}
-  .tec-actions{display:flex;gap:10px;flex-wrap:wrap;}.tec-actions button{flex:1;min-height:48px;font-size:15px;}.tec-main{background:#087d8c!important;color:white!important;border:0;}.tec-warning{background:#fff4d8;color:#78500d;padding:10px;border-radius:8px;}
-  .fase-wrap{background:#f0f8fa;border:1px solid #cfe6ea;border-radius:10px;padding:12px;margin:10px 0;}
-  .fase-actual-txt{font-size:14px;color:#105b69;margin-bottom:8px;}
-  .fase-barra{height:10px;background:#d5e8ec;border-radius:20px;overflow:hidden;margin-bottom:10px;}
-  .fase-barra-fill{height:100%;background:linear-gradient(90deg,#0aa2b8,#087d8c);border-radius:20px;transition:width .4s;}
+  .tec-head{padding:24px;border-radius:20px;background:linear-gradient(135deg,rgba(34,211,238,.1),rgba(11,138,156,.04));border:1px solid var(--t-linea);}
+  .tec-head h1{font-size:clamp(22px,5vw,30px);line-height:1.15;margin:0;font-weight:700;background:linear-gradient(90deg,var(--t-blanco),var(--t-agua));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .tec-head p{color:var(--t-suave);font-size:14px;margin-top:8px;font-weight:300;}
+  .tec-toolbar{display:flex;align-items:end;gap:12px;margin:20px 0 8px;}.tec-toolbar>div{flex:1;}.tec-toolbar label{display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:var(--t-suave);}
+  .tec-toolbar select{width:100%;background:var(--t-carbon2);border:1px solid var(--t-linea);color:var(--t-blanco);border-radius:12px;padding:13px;font-size:16px;min-height:50px;}
+  .tec-toolbar .btn{background:var(--t-carbon2);border:1px solid var(--t-linea);color:var(--t-agua);min-height:50px;border-radius:12px;}
+  .tec-local{font-size:12px;color:var(--t-tenue);margin-bottom:16px;font-weight:300;}
+
+  /* Marcador del día */
+  .tec-stats{display:flex;gap:10px;margin:18px 0;}
+  .tec-stats>div{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0));border:1px solid var(--t-linea);padding:15px 12px;border-radius:15px;flex:1;text-align:center;}
+  .tec-stats b{display:block;font-size:27px;font-weight:800;line-height:1;}
+  .tec-stats span{font-size:11px;color:var(--t-suave);display:block;margin-top:6px;}
+  .tec-stats .s-cal b{color:var(--t-oro);}
+  .tec-grid{display:flex;flex-direction:column;gap:16px;}
+
+  /* Tarjeta de trabajo */
+  .tec-job{background:var(--t-carbon2);border:1px solid var(--t-linea);border-radius:20px;overflow:hidden;position:relative;}
+  .tec-job.es-activo{border-color:rgba(34,211,238,.4);box-shadow:0 0 30px rgba(34,211,238,.08);}
+  .tec-job.nuevo{animation:entra-nuevo .5s ease;}
+  @keyframes entra-nuevo{0%{transform:scale(.96);opacity:.4;}100%{transform:scale(1);opacity:1;}}
+  .tec-job-header{padding:18px 20px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border-bottom:1px solid var(--t-linea);}
+  .tec-job h2{font-size:30px;letter-spacing:1px;font-weight:800;overflow-wrap:anywhere;line-height:1;}
+  .tec-job-header small{color:var(--t-suave);font-size:13px;display:block;margin-top:6px;font-weight:300;}
+  .tec-badge{padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;}
+  .tec-badge.b-espera{background:rgba(138,154,168,.15);color:var(--t-suave);}
+  .tec-badge.b-proceso{background:rgba(34,211,238,.15);color:var(--t-agua);}
+  .tec-badge.b-listo{background:rgba(52,211,153,.15);color:var(--t-verde);}
+  .tec-badge.b-pausa{background:rgba(244,183,64,.18);color:var(--t-ambar);}
+  .tec-job-body{padding:18px 20px;display:grid;gap:14px;}
+  .tec-service{font-size:17px;font-weight:600;color:var(--t-agua);}
+  .tec-notes{background:rgba(255,255,255,.03);border:1px solid var(--t-linea);border-radius:12px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:var(--t-suave);font-weight:300;}
+
+  /* Cronómetro / semáforo */
+  .crono{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);border:1px solid var(--t-linea);border-radius:14px;padding:12px 16px;}
+  .crono .t{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;}
+  .crono .et{font-size:12px;color:var(--t-suave);margin-top:4px;font-weight:300;}
+  .crono.verde .t{color:var(--t-verde);} .crono.ambar .t{color:var(--t-ambar);} .crono.rojo .t{color:var(--t-rojo);}
+  .crono .sem{width:14px;height:14px;border-radius:50%;}
+  .crono.verde .sem{background:var(--t-verde);box-shadow:0 0 12px rgba(52,211,153,.6);}
+  .crono.ambar .sem{background:var(--t-ambar);box-shadow:0 0 12px rgba(244,183,64,.6);}
+  .crono.rojo .sem{background:var(--t-rojo);box-shadow:0 0 12px rgba(242,109,109,.6);animation:parpadeo 1s infinite;}
+  @keyframes parpadeo{50%{opacity:.4;}}
+
+  /* Avance por fase */
+  .fase-wrap{background:rgba(34,211,238,.05);border:1px solid rgba(34,211,238,.18);border-radius:14px;padding:16px;}
+  .fase-actual-txt{font-size:14px;color:var(--t-suave);margin-bottom:4px;font-weight:300;}
+  .fase-actual-txt b{color:var(--t-agua);font-size:22px;font-weight:700;display:block;margin-top:2px;}
+  .fase-barra{height:10px;background:var(--t-linea);border-radius:20px;overflow:hidden;margin:12px 0;}
+  .fase-barra-fill{height:100%;background:linear-gradient(90deg,var(--t-agua2),var(--t-agua));border-radius:20px;transition:width .5s;box-shadow:0 0 12px rgba(34,211,238,.5);}
   .fase-chips{display:flex;flex-wrap:wrap;gap:6px;}
-  .fase-chip{font-size:11px;padding:4px 9px;border-radius:20px;background:#e3edef;color:#6a7f84;}
-  .fase-chip.hecha{background:#d7f0dc;color:#2f7a3f;}
-  .fase-chip.actual{background:#087d8c;color:#fff;font-weight:700;}
-  .tec-dialog{max-width:520px;max-height:90dvh;overflow:auto;}.tec-empty{grid-column:1/-1;text-align:center;padding:36px;background:white;border:1px dashed #bdcbd8;border-radius:18px;}
+  .fase-chip{font-size:11px;padding:4px 10px;border-radius:20px;background:var(--t-linea);color:var(--t-tenue);}
+  .fase-chip.hecha{background:rgba(52,211,153,.12);color:var(--t-verde);}
+  .fase-chip.actual{background:var(--t-agua);color:#04222a;font-weight:800;}
+
+  /* Botones GIGANTES para manos mojadas */
+  .tec-actions{display:flex;flex-direction:column;gap:12px;}
+  .btn-gigante{width:100%;min-height:72px;font-size:20px;font-weight:700;border:0;border-radius:16px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .12s;}
+  .btn-gigante:active{transform:scale(.97);}
+  .btn-gigante.principal{background:linear-gradient(135deg,var(--t-agua),var(--t-teal));color:#042229;box-shadow:0 10px 30px rgba(34,211,238,.3);}
+  .btn-gigante.terminar{background:linear-gradient(135deg,var(--t-verde),#1f9c6e);color:#04231a;box-shadow:0 10px 30px rgba(52,211,153,.3);}
+  .btn-sec{width:100%;min-height:50px;font-size:15px;font-weight:600;border:1px solid var(--t-linea);border-radius:14px;background:transparent;color:var(--t-suave);cursor:pointer;font-family:inherit;}
+  .tec-warning{background:rgba(244,183,64,.1);color:var(--t-ambar);padding:12px;border-radius:12px;font-size:14px;text-align:center;}
+
+  .tec-dialog{max-width:520px;max-height:90dvh;overflow:auto;}
+  .tec-empty{text-align:center;padding:50px 24px;border:1px dashed var(--t-linea);border-radius:20px;color:var(--t-suave);}
+  .tec-empty .ic{font-size:50px;display:block;margin-bottom:14px;opacity:.6;}
   @media(max-width:700px){.topbar{position:relative;flex-wrap:wrap;gap:12px;}.topbar>div:last-child{flex-wrap:wrap;}.tec-grid{grid-template-columns:1fr;}#vistaTecnico{padding:0 12px 28px;}.tec-head{padding:22px;}.vista-nav{padding:0 12px;}.vista-nav button{flex:1;min-height:48px;}.tec-toolbar select{font-size:16px;min-height:48px;}.tec-stats{gap:6px;}.tec-stats>div{padding:10px;}.tec-dialog textarea{font-size:16px;}.queue-item{flex-wrap:wrap;}.modal-bg{padding:10px;}}
 
   body{background:#070e1c;}.topbar{background:#101b2e;border-color:#26364c;color:#f0f7ff;}.brand span{color:#a7b7cb;}
@@ -235,9 +284,8 @@
 
 <nav class="vista-nav" aria-label="Área de trabajo"><button class="btn" onclick="cambiarVista('recepcion')">Recepción</button><button class="btn" onclick="cambiarVista('tecnico')">Área del técnico</button></nav>
 <section id="vistaTecnico" hidden>
-  <header class="tec-head"><span class="tec-eyebrow">OPERACIÓN · AUTOLAVADO</span><h1>Tu siguiente trabajo,<br>todo a la mano.</h1><p>Revisa la orden, inicia y registra cómo va el servicio.</p></header>
-  <div class="tec-toolbar"><div><label for="tecnicoActual">Selecciona al técnico</label><select id="tecnicoActual" onchange="renderTecnico()"></select></div><button class="btn" onclick="actualizarTecnico()">Actualizar</button></div>
-  <p class="tec-local">Vista local de esta PC. Seleccionar un técnico filtra la cola; todavía no es un acceso personal ni sincroniza otros dispositivos.</p>
+  <header class="tec-head"><h1>Tu siguiente trabajo</h1><p>Inicia, marca el avance paso a paso y entrega a tiempo.</p></header>
+  <div class="tec-toolbar"><div><label for="tecnicoActual">¿Quién eres?</label><select id="tecnicoActual" onchange="cambiarTecnico()"></select></div><button class="btn" onclick="actualizarTecnico()">↻ Actualizar</button></div>
   <div id="tecnicoResumen" class="tec-stats"></div><div id="tecnicoTrabajos" class="tec-grid"></div>
 </section>
 <div class="wrap" id="vistaRecepcion">
@@ -479,7 +527,13 @@
 
 <script id="configInicial" type="application/json">{{ configuracion|tojson }}</script>
 <script>
-  if(typeof setInterval === "function") setInterval(function(){if(!document.getElementById("vistaTecnico").hidden) renderTecnico();},30000);
+  // En la vista del técnico, recarga del servidor para ver autos que recepción
+  // le haya asignado desde otro dispositivo, y refresca la pantalla (dispara el aviso).
+  if(typeof setInterval === "function") setInterval(async function(){
+    if(document.getElementById("vistaTecnico").hidden) return;
+    try{ await cargarEstadoServidor(); }catch(e){}
+    renderTecnico();
+  }, 12000);
   // Tarifas base por tipo de lavado y multiplicador por vehículo
   var CONFIG = JSON.parse(document.getElementById("configInicial").textContent);
   var TARIFA = Object.create(null), FACTOR = CONFIG.tipos_vehiculo;
@@ -970,37 +1024,175 @@
   }
   async function actualizarTecnico(){try{aplicarConfiguracion(await leerConfiguracion());cargarSelectorTecnico();renderTecnico();mostrarToast("Configuración actualizada; cola de este navegador.");}catch(e){mostrarToast("No se pudo actualizar. Reintenta.");}}
   function asignadoTecnico(v){var id=document.getElementById("tecnicoActual").value,r=catalogoRecurso("personal")[id];return !!r && (v.responsableId ? v.responsableId === id : v.resp === r.nombre);}
-  function renderTecnico(){
-    var seleccion=document.getElementById("tecnicoActual").value;
-    var trabajos=vehiculos.map(function(v,i){return {v:v,i:i};}).filter(function(x){return asignadoTecnico(x.v) && x.v.estado !== "Entregado";});
-    var prioridad={"En proceso":0,"Espera":1,"Listo":2};trabajos.sort(function(a,b){return prioridad[a.v.estado]-prioridad[b.v.estado] || a.i-b.i;});
-    document.getElementById("tecnicoResumen").innerHTML=[['En proceso','En trabajo'],['Espera','En espera'],['Listo','Terminados']].map(function(par){return '<div><b>'+trabajos.filter(function(x){return x.v.estado === par[0];}).length+'</b><span>'+par[1]+'</span></div>';}).join('');
-    document.getElementById("tecnicoTrabajos").innerHTML=trabajos.length ? trabajos.map(function(x){
-      var v=x.v,i=x.i,activo=v.estado === "En proceso",espera=v.estado === "Espera";
-      var minutos=v.inicioReal ? Math.max(0,Math.floor(((v.pausaInicio ? new Date(v.pausaInicio).getTime() : Date.now())-new Date(v.inicioReal).getTime()-(v.pausaAcumuladaMs || 0))/60000)) : null;
+  // Memoria para detectar trabajo nuevo asignado
+  var folniosTecnicoPrevios = null;
 
-      // Bloque de fases (solo mientras está en proceso)
-      var bloqueFase = "", botonFase = "";
-      if(activo && !v.pausaInicio){
-        var f = faseDe(v);
-        if(f){
-          var esUltima = f.indice >= f.total - 1;
-          var chips = fasesActivas().map(function(fa,k){
-            var clase = k < f.indice ? "fase-chip hecha" : (k === f.indice ? "fase-chip actual" : "fase-chip");
-            return '<span class="'+clase+'">'+escaparHTML(fa.nombre)+'</span>';
-          }).join('');
-          var pct = Math.round(((f.indice+1)/f.total)*100);
-          bloqueFase = '<div class="fase-wrap"><div class="fase-actual-txt">Fase '+(f.indice+1)+' de '+f.total+': <b>'+escaparHTML(f.nombre)+'</b></div>'
-            + '<div class="fase-barra"><div class="fase-barra-fill" style="width:'+pct+'%"></div></div>'
-            + '<div class="fase-chips">'+chips+'</div></div>';
-          botonFase = '<button class="btn tec-main" onclick="avanzarFase('+i+')">'+(esUltima ? 'Terminar lavado ✓' : 'Siguiente fase →')+'</button>';
-        }
-      }
-
-      var acciones=espera ? (v.presente ? '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;iniciar&quot;)">Iniciar trabajo</button>' : '<p class="tec-warning">Recepción debe confirmar la llegada.</p>') : activo ? (v.pausaInicio ? '<button class="btn tec-main" onclick="accionTrabajo('+i+',&quot;reanudar&quot;)">Reanudar trabajo</button>' : botonFase + '<button class="btn" onclick="abrirAccionTecnico('+i+',&quot;pausa&quot;)">Pausar</button>') : '<p>Trabajo terminado. Recepción realiza la entrega.</p>';
-      return '<article class="tec-job"><div class="tec-job-header"><div><h2>'+escaparHTML(v.placa || v.sub || 'Sin placa')+'</h2><small>'+escaparHTML(v.folio)+' · '+escaparHTML(v.bahia)+'</small></div><span class="tec-badge">'+escaparHTML(v.pausaInicio ? 'Pausado' : v.estado)+'</span></div><div class="tec-job-body"><div class="tec-service">'+escaparHTML(v.lavado)+'</div><p>Cita '+escaparHTML(v.horaCita || '—')+' · Estimación '+escaparHTML(v.entrega || '—')+'</p>'+(minutos !== null ? '<p>Tiempo trabajado: '+minutos+' min</p>' : '')+bloqueFase+'<p>'+escaparHTML(detalleVehiculo(v))+'</p><div class="tec-notes">'+escaparHTML(inspeccionVehiculo(v))+'</div><div class="tec-notes">'+escaparHTML(v.notas || 'Sin instrucciones adicionales')+'</div>'+(v.pausaInicio ? '<p class="tec-warning">Pausa: '+escaparHTML(v.motivoPausa)+'</p>' : '')+'<div class="tec-actions">'+acciones+'</div>'+(activo ? '<button class="btn" onclick="abrirAccionTecnico('+i+',&quot;incidencia&quot;)">Reportar incidencia</button>' : '')+(v.incidencias || []).map(function(n){return '<p class="tec-warning">'+escaparHTML(horaReal(n.fecha))+' · '+escaparHTML(n.motivo)+'</p>';}).join('')+'</div></article>';
-    }).join('') : '<div class="tec-empty">'+(seleccion ? 'No tienes trabajos pendientes en esta cola.' : 'Selecciona tu nombre para ver los trabajos asignados.')+'</div>';
+  function cambiarTecnico(){
+    folniosTecnicoPrevios = null;  // al cambiar de persona, no avisar de golpe
+    renderTecnico();
   }
+
+  // Marcador del día del técnico: autos entregados hoy, tiempo promedio, calificación
+  function marcadorDelDia(id, nombre){
+    var hoy = fechaLocalISO();
+    var mios = vehiculos.filter(function(v){
+      var suyo = v.responsableId ? v.responsableId === id : v.resp === nombre;
+      var f = (v.creadoEn && v.creadoEn !== "demo") ? String(v.creadoEn).slice(0,10) : hoy;
+      return suyo && f === hoy;
+    });
+    var entregados = mios.filter(function(v){return v.estado === "Entregado";});
+    var tiempos = entregados.map(function(v){
+      if(!v.inicioReal || !v.finReal) return null;
+      return (new Date(v.finReal).getTime() - new Date(v.inicioReal).getTime() - (v.pausaAcumuladaMs||0))/60000;
+    }).filter(function(x){return x !== null && x >= 0;});
+    var prom = tiempos.length ? Math.round(tiempos.reduce(function(a,b){return a+b;},0)/tiempos.length) : null;
+    var califs = mios.filter(function(v){return v.calif > 0;}).map(function(v){return v.calif;});
+    var calProm = califs.length ? (califs.reduce(function(a,b){return a+b;},0)/califs.length) : null;
+    return {autos: entregados.length, prom: prom, calProm: calProm};
+  }
+
+  function renderTecnico(){
+    var id = document.getElementById("tecnicoActual").value;
+    var nombre = (catalogoRecurso("personal")[id] || {}).nombre;
+    var trabajos = vehiculos.map(function(v,i){return {v:v,i:i};}).filter(function(x){return asignadoTecnico(x.v) && x.v.estado !== "Entregado";});
+    var prioridad = {"En proceso":0,"Espera":1,"Listo":2};
+    trabajos.sort(function(a,b){return prioridad[a.v.estado]-prioridad[b.v.estado] || a.i-b.i;});
+
+    // --- Aviso de trabajo nuevo asignado ---
+    var foliosActuales = trabajos.map(function(x){return x.v.folio;});
+    if(id && folniosTecnicoPrevios !== null){
+      var nuevos = foliosActuales.filter(function(f){return folniosTecnicoPrevios.indexOf(f) === -1;});
+      if(nuevos.length > 0){ avisarTrabajoNuevo(nuevos.length); }
+    }
+    folniosTecnicoPrevios = id ? foliosActuales : null;
+
+    // --- Marcador del día ---
+    var cont = trabajos.filter.bind(trabajos);
+    var enTrabajo = trabajos.filter(function(x){return x.v.estado === "En proceso";}).length;
+    var enEspera = trabajos.filter(function(x){return x.v.estado === "Espera";}).length;
+    var listos = trabajos.filter(function(x){return x.v.estado === "Listo";}).length;
+    var m = id ? marcadorDelDia(id, nombre) : {autos:0, prom:null, calProm:null};
+    document.getElementById("tecnicoResumen").innerHTML =
+        tarjetaStat(enTrabajo, "En trabajo")
+      + tarjetaStat(enEspera, "En espera")
+      + tarjetaStat(m.autos, "Hoy lavé")
+      + tarjetaStat(m.prom !== null ? m.prom+"′" : "—", "Mi promedio")
+      + '<div class="s-cal">'+tarjetaStatRaw((m.calProm !== null ? m.calProm.toFixed(1)+" ★" : "—"), "Mi calif.")+'</div>';
+
+    // --- Lista de trabajos ---
+    document.getElementById("tecnicoTrabajos").innerHTML = trabajos.length ? trabajos.map(function(x){
+      return tarjetaTrabajo(x.v, x.i);
+    }).join('') : (id
+      ? '<div class="tec-empty"><span class="ic">✓</span>No tienes autos pendientes.<br>Cuando recepción te asigne uno, aparecerá aquí.</div>'
+      : '<div class="tec-empty"><span class="ic">👋</span>Elige tu nombre arriba para ver tus autos.</div>');
+  }
+
+  function tarjetaStat(valor, etiqueta){ return '<div><b>'+escaparHTML(String(valor))+'</b><span>'+escaparHTML(etiqueta)+'</span></div>'; }
+  function tarjetaStatRaw(valor, etiqueta){ return '<div><b>'+escaparHTML(String(valor))+'</b><span>'+escaparHTML(etiqueta)+'</span></div>'; }
+
+  function tarjetaTrabajo(v, i){
+    var activo = v.estado === "En proceso", espera = v.estado === "Espera", pausado = !!v.pausaInicio;
+    var claseBadge = pausado ? "b-pausa" : (activo ? "b-proceso" : espera ? "b-espera" : "b-listo");
+    var textoBadge = pausado ? "En pausa" : v.estado;
+
+    // Cronómetro + semáforo (solo en proceso)
+    var crono = "";
+    if(activo && v.inicioReal){
+      var mins = Math.max(0, Math.floor((( pausado ? new Date(v.pausaInicio).getTime() : Date.now()) - new Date(v.inicioReal).getTime() - (v.pausaAcumuladaMs||0))/60000));
+      var estimado = v.duracionMinutos || DURACION[v.lavado] || 30;
+      var color = mins <= estimado*0.8 ? "verde" : (mins <= estimado ? "ambar" : "rojo");
+      var seg = Math.max(0, Math.floor((( pausado ? new Date(v.pausaInicio).getTime() : Date.now()) - new Date(v.inicioReal).getTime() - (v.pausaAcumuladaMs||0))/1000) % 60);
+      crono = '<div class="crono '+color+'" data-crono="'+i+'" data-inicio="'+(v.inicioReal)+'" data-pausa="'+(v.pausaInicio||"")+'" data-acum="'+(v.pausaAcumuladaMs||0)+'" data-est="'+estimado+'">'
+        + '<div><div class="t">'+String(mins).padStart(2,"0")+":"+String(seg).padStart(2,"0")+'</div><div class="et">de '+estimado+' min estimados</div></div>'
+        + '<div class="sem"></div></div>';
+    }
+
+    // Avance por fase
+    var bloqueFase = "", botonAccion = "";
+    if(activo && !pausado){
+      var f = faseDe(v);
+      if(f){
+        var esUltima = f.indice >= f.total - 1;
+        var chips = fasesActivas().map(function(fa,k){
+          var clase = k < f.indice ? "fase-chip hecha" : (k === f.indice ? "fase-chip actual" : "fase-chip");
+          return '<span class="'+clase+'">'+escaparHTML(fa.nombre)+'</span>';
+        }).join('');
+        var pct = Math.round(((f.indice+1)/f.total)*100);
+        bloqueFase = '<div class="fase-wrap"><div class="fase-actual-txt">Fase '+(f.indice+1)+' de '+f.total+'<b>'+escaparHTML(f.nombre)+'</b></div>'
+          + '<div class="fase-barra"><div class="fase-barra-fill" style="width:'+pct+'%"></div></div>'
+          + '<div class="fase-chips">'+chips+'</div></div>';
+        botonAccion = esUltima
+          ? '<button class="btn-gigante terminar" onclick="avanzarFase('+i+')">Terminar lavado ✓</button>'
+          : '<button class="btn-gigante principal" onclick="avanzarFase('+i+')">Siguiente fase →</button>';
+      }
+    } else if(espera){
+      botonAccion = v.presente
+        ? '<button class="btn-gigante principal" onclick="accionTrabajo('+i+',&quot;iniciar&quot;)">▶ Iniciar lavado</button>'
+        : '<p class="tec-warning">Recepción debe confirmar la llegada del auto.</p>';
+    } else if(pausado){
+      botonAccion = '<button class="btn-gigante principal" onclick="accionTrabajo('+i+',&quot;reanudar&quot;)">Reanudar lavado</button>';
+    } else {
+      botonAccion = '<p class="tec-warning">Trabajo terminado. Recepción realiza la entrega.</p>';
+    }
+
+    var secundarios = "";
+    if(activo){
+      secundarios = '<button class="btn-sec" onclick="abrirAccionTecnico('+i+',&quot;pausa&quot;)">⏸ Pausar</button>'
+        + '<button class="btn-sec" onclick="abrirAccionTecnico('+i+',&quot;incidencia&quot;)">⚠ Reportar algo</button>';
+    }
+
+    var incidencias = (v.incidencias || []).map(function(n){return '<p class="tec-warning">'+escaparHTML(horaReal(n.fecha))+' · '+escaparHTML(n.motivo)+'</p>';}).join('');
+    var notas = v.notas ? '<div class="tec-notes">📝 '+escaparHTML(v.notas)+'</div>' : "";
+
+    return '<article class="tec-job'+(activo?' es-activo':'')+'">'
+      + '<div class="tec-job-header"><div><h2>'+escaparHTML(v.placa || v.sub || 'Sin placa')+'</h2>'
+      +   '<small>'+escaparHTML(v.bahia||"")+' · '+escaparHTML(v.lavado||"")+' · entrega '+escaparHTML(v.entrega||"—")+'</small></div>'
+      +   '<span class="tec-badge '+claseBadge+'">'+escaparHTML(textoBadge)+'</span></div>'
+      + '<div class="tec-job-body">'
+      +   crono
+      +   bloqueFase
+      +   (pausado ? '<p class="tec-warning">En pausa: '+escaparHTML(v.motivoPausa||"")+'</p>' : '')
+      +   notas
+      +   incidencias
+      +   '<div class="tec-actions">'+botonAccion+secundarios+'</div>'
+      + '</div></article>';
+  }
+
+  // --- Aviso de trabajo nuevo (sonido + visual) ---
+  function avisarTrabajoNuevo(cuantos){
+    mostrarToast("🔔 Te asignaron "+cuantos+(cuantos===1?" auto nuevo":" autos nuevos"));
+    try{
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = "sine"; o.frequency.value = 880;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+      o.start(); o.stop(ctx.currentTime + 0.5);
+      o.onended = function(){ try{ ctx.close(); }catch(e){} };
+    }catch(e){ /* sin audio, el toast basta */ }
+    if(navigator.vibrate) try{ navigator.vibrate([120,60,120]); }catch(e){}
+  }
+
+  // Tic del cronómetro cada segundo (sin recargar toda la vista)
+  function tictacCronos(){
+    if(document.getElementById("vistaTecnico").hidden) return;
+    document.querySelectorAll("[data-crono]").forEach(function(el){
+      var inicio = el.getAttribute("data-inicio");
+      var pausa = el.getAttribute("data-pausa");
+      var acum = Number(el.getAttribute("data-acum")||0);
+      var est = Number(el.getAttribute("data-est")||30);
+      if(!inicio) return;
+      var fin = pausa ? new Date(pausa).getTime() : Date.now();
+      var totalSeg = Math.max(0, Math.floor((fin - new Date(inicio).getTime() - acum)/1000));
+      var mins = Math.floor(totalSeg/60), seg = totalSeg%60;
+      var t = el.querySelector(".t"); if(t) t.textContent = String(mins).padStart(2,"0")+":"+String(seg).padStart(2,"0");
+      el.classList.remove("verde","ambar","rojo");
+      el.classList.add(mins <= est*0.8 ? "verde" : (mins <= est ? "ambar" : "rojo"));
+    });
+  }
+  setInterval(tictacCronos, 1000);
   async function accionTrabajo(i,accion){
     var v=vehiculos[i];if(!v || !asignadoTecnico(v)) return;
     if(accion === 'iniciar' && v.estado === 'Espera'){await iniciarServicio(i);renderTecnico();return;}
