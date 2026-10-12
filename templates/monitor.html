@@ -101,15 +101,37 @@
   function minutosDesde(iso){ if(!iso) return 0; var t=new Date(iso).getTime(); return isNaN(t)?0:Math.max(0,Math.floor((Date.now()-t)/60000)); }
 
   function autoSVG(tint){
-    return '<svg class="auto-svg" viewBox="0 0 300 130" fill="none" xmlns="http://www.w3.org/2000/svg">'
-      + '<defs><linearGradient id="b'+tint.id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+tint.top+'"/><stop offset="1" stop-color="'+tint.bot+'"/></linearGradient>'
-      + '<linearGradient id="g'+tint.id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3b4d"/><stop offset="1" stop-color="#14202c"/></linearGradient></defs>'
-      + '<path d="M18 92 C18 80 30 78 40 77 L70 56 C78 50 90 46 104 46 L186 46 C205 46 220 52 232 66 L258 78 C274 80 286 83 286 95 L286 101 C286 105 283 108 279 108 L25 108 C21 108 18 105 18 101 Z" fill="url(#b'+tint.id+')" stroke="'+tint.edge+'" stroke-width="1.5"/>'
-      + '<path d="M78 58 L100 50 L142 50 L142 72 L72 72 Z" fill="url(#g'+tint.id+')"/>'
-      + '<path d="M150 50 L182 50 C196 50 206 54 214 64 L222 72 L150 72 Z" fill="url(#g'+tint.id+')"/>'
-      + '<path d="M80 57 L100 50 L138 50 L138 54 L86 54 Z" fill="rgba(255,255,255,'+tint.shine+')"/>'
-      + '<circle cx="86" cy="108" r="19" fill="#0c1116" stroke="'+tint.edge+'" stroke-width="2"/><circle cx="86" cy="108" r="8" fill="#1c2a37"/>'
-      + '<circle cx="222" cy="108" r="19" fill="#0c1116" stroke="'+tint.edge+'" stroke-width="2"/><circle cx="222" cy="108" r="8" fill="#1c2a37"/>'
+    var id = tint.id;
+    function rueda(cx){
+      return '<g>'
+        + '<circle cx="'+cx+'" cy="150" r="26" fill="#0a0e12"/>'
+        + '<circle cx="'+cx+'" cy="150" r="26" fill="none" stroke="'+tint.edge+'" stroke-width="1.5" opacity=".5"/>'
+        + '<circle cx="'+cx+'" cy="150" r="14" fill="#18232e"/>'
+        + '<circle cx="'+cx+'" cy="150" r="14" fill="none" stroke="url(#rim'+id+')" stroke-width="2"/>'
+        + '<g stroke="url(#rim'+id+')" stroke-width="2.4" stroke-linecap="round">'
+        +   '<line x1="'+cx+'" y1="139" x2="'+cx+'" y2="161"/>'
+        +   '<line x1="'+(cx-10)+'" y1="144" x2="'+(cx+10)+'" y2="156"/>'
+        +   '<line x1="'+(cx-10)+'" y1="156" x2="'+(cx+10)+'" y2="144"/>'
+        + '</g>'
+        + '<circle cx="'+cx+'" cy="150" r="3.5" fill="'+tint.edge+'"/>'
+        + '</g>';
+    }
+    return '<svg class="auto-svg" viewBox="0 0 420 185" fill="none" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs>'
+      +   '<linearGradient id="body'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+tint.top+'"/><stop offset="1" stop-color="'+tint.bot+'"/></linearGradient>'
+      +   '<linearGradient id="glass'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#32475c"/><stop offset="1" stop-color="#121c26"/></linearGradient>'
+      +   '<linearGradient id="rim'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef6f9"/><stop offset="1" stop-color="'+tint.edge+'"/></linearGradient>'
+      +   '<linearGradient id="shine'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(255,255,255,'+(tint.shine)+')"/><stop offset=".5" stop-color="rgba(255,255,255,0)"/></linearGradient>'
+      + '</defs>'
+      + '<ellipse cx="210" cy="176" rx="170" ry="9" fill="rgba(0,0,0,.45)"/>'
+      + '<path d="M26 128 C26 118 34 112 46 110 L92 104 C104 88 124 74 150 68 L198 54 C228 48 262 50 288 64 L322 86 L372 96 C392 100 404 108 404 122 L404 132 C404 138 400 142 394 142 L34 142 C29 142 26 138 26 132 Z" fill="url(#body'+id+')" stroke="'+tint.edge+'" stroke-width="2"/>'
+      + '<path d="M58 124 L360 118" stroke="'+tint.edge+'" stroke-width="1.5" opacity=".35"/>'
+      + '<path d="M150 72 C168 64 192 60 212 60 L246 64 L244 96 L138 96 C140 86 144 78 150 72 Z" fill="url(#glass'+id+')"/>'
+      + '<path d="M252 64 C268 66 282 72 296 82 L312 96 L252 96 Z" fill="url(#glass'+id+')"/>'
+      + '<path d="M120 112 L300 78 L318 90 L138 126 Z" fill="url(#shine'+id+')" opacity=".9"/>'
+      + '<path d="M392 116 C398 116 400 120 400 124 L386 126 L386 118 Z" fill="'+tint.edge+'" opacity=".9"/>'
+      + '<rect x="196" y="110" width="22" height="4" rx="2" fill="'+tint.edge+'" opacity=".55"/>'
+      + rueda(96) + rueda(330)
       + '</svg>';
   }
   function efectos(tipo){
