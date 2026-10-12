@@ -285,15 +285,19 @@
     <div><h1><b id="nombreNegocio">{{ configuracion.nombre_negocio }}</b> — Panel de control<span id="fechaHoy"></span></h1></div>
   </div>
   <div style="display:flex;gap:8px;align-items:center">
-    <span style="font-size:11px;padding:4px 9px;border-radius:20px;background:#EAF3DE;color:#3B6D11;font-weight:600">QA v2 · local</span>
-    <button class="btn admin-action" onclick="exportarDatos()">⬇ Respaldo</button>
-    <button class="btn admin-action" onclick="abrirCaja()">Caja</button>
-    <button class="btn admin-action" id="btnAdmin" onclick="abrirAdmin()" aria-label="Abrir administración">⚙ Administrar</button>
-    <button class="btn admin-action" onclick="cambiarVista('recepcion'); pasoRecepcion(0); document.getElementById('inPlaca').focus()">＋ Nuevo ingreso</button>
+    <span id="usuarioChip" style="font-size:12px;padding:5px 11px;border-radius:20px;background:#1a2b42;color:#9fc3e6;font-weight:600"></span>
+    <button class="btn admin-action" data-perm="respaldo" onclick="exportarDatos()">⬇ Respaldo</button>
+    <button class="btn admin-action" data-perm="caja" onclick="abrirCaja()">Caja</button>
+    <button class="btn admin-action" data-perm="admin" id="btnAdmin" onclick="abrirAdmin()" aria-label="Abrir administración">⚙ Administrar</button>
+    <button class="btn admin-action" data-perm="registrar" onclick="cambiarVista('recepcion'); pasoRecepcion(0); document.getElementById('inPlaca').focus()">＋ Nuevo ingreso</button>
+    <button class="btn" onclick="cerrarSesion()" title="Cerrar sesión">Salir</button>
   </div>
 </div>
 
-<nav class="vista-nav" aria-label="Área de trabajo"><button class="btn" onclick="cambiarVista('recepcion')">Recepción</button><button class="btn" onclick="cambiarVista('tecnico')">Área del técnico</button></nav>
+<nav class="vista-nav" aria-label="Área de trabajo">
+  <button class="btn" data-vista="recepcion" onclick="cambiarVista('recepcion')">Recepción</button>
+  <button class="btn" data-vista="tecnico" onclick="cambiarVista('tecnico')">Área del técnico</button>
+</nav>
 <section id="vistaTecnico" hidden>
   <header class="tec-head"><h1>Tu siguiente trabajo</h1><p>Inicia, marca el avance paso a paso y entrega a tiempo.</p></header>
   <div class="tec-toolbar"><div><label for="tecnicoActual">¿Quién eres?</label><select id="tecnicoActual" onchange="cambiarTecnico()"></select></div><button class="btn" onclick="actualizarTecnico()">↻ Actualizar</button></div>
@@ -537,7 +541,57 @@
 <div class="toast" id="toast"></div>
 
 <script id="configInicial" type="application/json">{{ configuracion|tojson }}</script>
+<script id="sesionInicial" type="application/json">{{ sesion|tojson }}</script>
 <script>
+  // ===== Sesión y roles =====
+  var SESION = (function(){
+    try{ return JSON.parse(document.getElementById("sesionInicial").textContent); }catch(e){ return null; }
+  })();
+
+  // Permisos por rol
+  var PERMISOS = {
+    admin:     {registrar:true, caja:true, admin:true, respaldo:true, recepcion:true, tecnico:true, reasignar:true},
+    recepcion: {registrar:true, caja:true, admin:false, respaldo:true, recepcion:true, tecnico:false, reasignar:true},
+    tecnico:   {registrar:false, caja:false, admin:false, respaldo:false, recepcion:false, tecnico:true, reasignar:false},
+  };
+  function permiso(nombre){
+    var rol = SESION && SESION.rol ? SESION.rol : "tecnico";
+    return (PERMISOS[rol] || PERMISOS.tecnico)[nombre] === true;
+  }
+
+  function aplicarRol(){
+    if(!SESION) return;
+    // Nombre del usuario en la barra
+    var chip = document.getElementById("usuarioChip");
+    if(chip) chip.textContent = (SESION.nombre || SESION.usuario) + " · " + ({admin:"Administrador",recepcion:"Recepción",tecnico:"Técnico"}[SESION.rol] || SESION.rol);
+
+    // Botones del topbar según permiso
+    document.querySelectorAll("[data-perm]").forEach(function(b){
+      b.style.display = permiso(b.dataset.perm) ? "" : "none";
+    });
+    // Pestañas de vista
+    document.querySelectorAll("[data-vista]").forEach(function(b){
+      b.style.display = permiso(b.dataset.vista) ? "" : "none";
+    });
+
+    // El técnico arranca en su vista y no puede salir de ella
+    if(SESION.rol === "tecnico"){
+      cambiarVista("tecnico");
+      // Fijar su nombre en el selector de técnico y bloquearlo
+      setTimeout(function(){
+        var sel = document.getElementById("tecnicoActual");
+        if(sel && SESION.tecnicoId){ sel.value = SESION.tecnicoId; sel.disabled = true; cambiarTecnico(); }
+      }, 300);
+    } else {
+      cambiarVista("recepcion");
+    }
+  }
+
+  async function cerrarSesion(){
+    try{ await fetch("/api/logout", {method:"POST"}); }catch(e){}
+    window.location.href = "/login";
+  }
+
   // En la vista del técnico, recarga del servidor para ver autos que recepción
   // le haya asignado desde otro dispositivo, y refresca la pantalla (dispara el aviso).
   if(typeof setInterval === "function") setInterval(async function(){
@@ -1859,6 +1913,7 @@
   (async function(){
     await cargarEstadoServidor();
     render();
+    aplicarRol();   // aplica permisos y vista según el rol del usuario
   })();
 </script>
 </body>

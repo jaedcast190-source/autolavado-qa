@@ -81,10 +81,59 @@ ESTADO_POR_DEFECTO = {
     "salidasCaja": [],
 }
 
+# ---------------------------------------------------------------------------
+# Usuarios y roles
+# ---------------------------------------------------------------------------
+# Roles: "admin" (todo), "recepcion" (registra, día, técnicos, caja),
+#        "tecnico" (solo su cola).
+import hashlib
+import hmac as _hmac
+import secrets
+
+
+def hashear_password(password, sal=None):
+    """Hash seguro de contraseña con PBKDF2 (sin dependencias externas)."""
+    if sal is None:
+        sal = secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), sal.encode("utf-8"), 120000)
+    return sal + "$" + dk.hex()
+
+
+def verificar_password(password, almacenado):
+    try:
+        sal, _ = almacenado.split("$", 1)
+    except (ValueError, AttributeError):
+        return False
+    return _hmac.compare_digest(hashear_password(password, sal), almacenado)
+
+
+def _usuarios_por_defecto():
+    """Usuarios de arranque. Claves temporales que el dueño debe cambiar."""
+    return {
+        "admin": {"nombre": "Administrador", "rol": "admin",
+                  "password": hashear_password("admin123"), "activo": True,
+                  "tecnicoId": None},
+        "recepcion": {"nombre": "Recepción", "rol": "recepcion",
+                      "password": hashear_password("recepcion123"), "activo": True,
+                      "tecnicoId": None},
+        # Un usuario por técnico (ligado a su id en personal p1/p2/p3)
+        "irving": {"nombre": "Irving", "rol": "tecnico",
+                   "password": hashear_password("irving123"), "activo": True,
+                   "tecnicoId": "p1"},
+        "roman": {"nombre": "Román", "rol": "tecnico",
+                  "password": hashear_password("roman123"), "activo": True,
+                  "tecnicoId": "p2"},
+        "alex": {"nombre": "Alex", "rol": "tecnico",
+                 "password": hashear_password("alex123"), "activo": True,
+                 "tecnicoId": "p3"},
+    }
+
 
 # ---------------------------------------------------------------------------
 # Conexión
 # ---------------------------------------------------------------------------
+def _ruta_sqlite():
+    base = os.environ.get("SQLITE_PATH")
 def _ruta_sqlite():
     base = os.environ.get("SQLITE_PATH")
     if base:
@@ -133,6 +182,8 @@ def inicializar():
         guardar_configuracion(CONFIG_POR_DEFECTO)
     if leer_estado() is None:
         guardar_estado(ESTADO_POR_DEFECTO)
+    if leer_usuarios() is None:
+        guardar_usuarios(_usuarios_por_defecto())
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +288,42 @@ def guardar_estado(datos):
     conn, _ = _conectar()
     try:
         _guardar_estado_interno(datos, conn=conn)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Usuarios (guardados como un documento JSON, igual que configuracion)
+# ---------------------------------------------------------------------------
+def leer_usuarios():
+    conn, marc = _conectar()
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT datos FROM configuracion WHERE id = {marc}", ("usuarios",))
+        fila = cur.fetchone()
+        return _deserializar(fila[0]) if fila else None
+    finally:
+        conn.close()
+
+
+def guardar_usuarios(datos):
+    conn, _ = _conectar()
+    marc = "%s" if USA_POSTGRES else "?"
+    try:
+        cur = conn.cursor()
+        if USA_POSTGRES:
+            cur.execute(
+                "INSERT INTO configuracion (id, datos) VALUES (%s, %s) "
+                "ON CONFLICT (id) DO UPDATE SET datos = EXCLUDED.datos",
+                ("usuarios", json.dumps(datos, ensure_ascii=False)),
+            )
+        else:
+            cur.execute(
+                f"INSERT INTO configuracion (id, datos) VALUES ({marc}, {marc}) "
+                "ON CONFLICT(id) DO UPDATE SET datos = excluded.datos",
+                ("usuarios", _serializar(datos)),
+            )
         conn.commit()
     finally:
         conn.close()

@@ -8,13 +8,82 @@ dispositivos (recepción, técnicos) y no se pierden al cerrar el navegador.
 
 import os
 import re
+import functools
 from decimal import Decimal, ROUND_HALF_UP
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, session, redirect
 
 import db
 
 app = Flask(__name__)
+# Clave para firmar las cookies de sesión. En Render se fija por variable de
+# entorno; en desarrollo se genera una temporal.
+app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(32)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=60 * 60 * 12,  # 12 horas
+)
+
+
+# ---------------------------------------------------------------------------
+# Autenticación y roles
+# ---------------------------------------------------------------------------
+def usuario_actual():
+    """Devuelve el dict del usuario en sesión, o None."""
+    u = session.get("usuario")
+    if not u:
+        return None
+    usuarios = db.leer_usuarios() or {}
+    datos = usuarios.get(u)
+    if not datos or not datos.get("activo", True):
+        return None
+    return {"usuario": u, "nombre": datos.get("nombre"), "rol": datos.get("rol"),
+            "tecnicoId": datos.get("tecnicoId")}
+
+
+def requiere_login(*roles):
+    """Decorador: exige sesión y, opcionalmente, uno de los roles dados."""
+    def deco(fn):
+        @functools.wraps(fn)
+        def envoltura(*args, **kwargs):
+            u = usuario_actual()
+            if not u:
+                return jsonify(ok=False, error="Sesión no iniciada"), 401
+            if roles and u["rol"] not in roles and u["rol"] != "admin":
+                return jsonify(ok=False, error="No tienes permiso para esta acción"), 403
+            return fn(*args, **kwargs)
+        return envoltura
+    return deco
+
+
+@app.post("/api/login")
+def api_login():
+    data = request.get_json(silent=True) or {}
+    usuario = str(data.get("usuario", "")).strip().lower()
+    password = str(data.get("password", ""))
+    usuarios = db.leer_usuarios() or {}
+    datos = usuarios.get(usuario)
+    if not datos or not datos.get("activo", True) or not db.verificar_password(password, datos.get("password", "")):
+        return jsonify(ok=False, error="Usuario o contraseña incorrectos"), 401
+    session.permanent = True
+    session["usuario"] = usuario
+    return jsonify(ok=True, usuario={"usuario": usuario, "nombre": datos.get("nombre"),
+                                     "rol": datos.get("rol"), "tecnicoId": datos.get("tecnicoId")})
+
+
+@app.post("/api/logout")
+def api_logout():
+    session.clear()
+    return jsonify(ok=True)
+
+
+@app.get("/api/yo")
+def api_yo():
+    u = usuario_actual()
+    if not u:
+        return jsonify(ok=False), 401
+    return jsonify(ok=True, usuario=u)
 
 # Catálogos base usados por la validación del servidor. La config real y
 # editable vive en la base de datos; estos son el respaldo de arranque.
@@ -86,10 +155,19 @@ def _config_para_interfaz():
 # ---------------------------------------------------------------------------
 # Páginas
 # ---------------------------------------------------------------------------
+@app.get("/login")
+def login_page():
+    config = db.leer_configuracion() or db.CONFIG_POR_DEFECTO
+    return render_template("login.html", configuracion=config)
+
+
 @app.get("/")
 def index():
+    u = usuario_actual()
+    if not u:
+        return redirect("/login")
     config = db.leer_configuracion() or db.CONFIG_POR_DEFECTO
-    return render_template("index.html", configuracion=config)
+    return render_template("index.html", configuracion=config, sesion=u)
 
 
 @app.get("/favicon.ico")
@@ -205,6 +283,7 @@ def api_config():
 
 
 @app.put("/api/config")
+@requiere_login("admin")
 def api_guardar_config():
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -313,6 +392,7 @@ def api_siguiente_estado():
 # La interfaz lee todo el documento y lo vuelve a escribir completo.
 # ---------------------------------------------------------------------------
 @app.get("/api/estado")
+@requiere_login()
 def api_leer_estado():
     estado = db.leer_estado()
     if estado is None:
@@ -334,6 +414,7 @@ def _sin_duplicados(vehiculos):
 
 
 @app.put("/api/estado")
+@requiere_login()
 def api_guardar_estado():
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -360,6 +441,7 @@ def _fecha_vehiculo(v):
 
 
 @app.patch("/api/estado/activos")
+@requiere_login()
 def api_guardar_activos():
     """Optimización: el frontend envía SOLO los autos activos (de hoy y sin
     entregar), no el histórico. El servidor conserva los históricos que ya

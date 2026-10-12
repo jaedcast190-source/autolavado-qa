@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>{{ configuracion.nombre_negocio }} — Acceso</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --carbon:#0B0E11; --carbon2:#121820; --linea:#1d2733;
+    --agua:#22D3EE; --agua2:#0EA5B5; --teal:#0b8a9c;
+    --blanco:#F3F7FA; --suave:#8A9AA8; --tenue:#56687a; --rojo:#F26D6D;
+  }
+  body{
+    font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:
+      radial-gradient(130% 80% at 50% -10%, #16202b 0%, rgba(11,14,17,0) 55%),
+      radial-gradient(90% 60% at 50% 120%, #10303a 0%, rgba(11,14,17,0) 60%),
+      var(--carbon);
+    min-height:100vh;color:var(--blanco);-webkit-font-smoothing:antialiased;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .caja{width:100%;max-width:380px;}
+  .marca{text-align:center;margin-bottom:28px;}
+  .logo{width:64px;height:64px;border-radius:17px;background:linear-gradient(135deg,var(--agua),var(--teal));display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 14px;box-shadow:0 0 30px rgba(34,211,238,.35);}
+  .marca h1{font-size:22px;font-weight:700;}
+  .marca p{color:var(--suave);font-size:14px;margin-top:4px;font-weight:300;}
+  .form{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0));border:1px solid var(--linea);border-radius:20px;padding:26px;}
+  .campo{margin-bottom:16px;}
+  .campo label{display:block;font-size:13px;color:var(--suave);margin-bottom:7px;font-weight:300;}
+  .campo input{width:100%;background:var(--carbon);border:1px solid var(--linea);border-radius:12px;padding:14px;color:var(--blanco);font-size:16px;font-family:inherit;}
+  .campo input:focus{outline:none;border-color:var(--agua);}
+  .btn{width:100%;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--agua),var(--teal));color:#042229;box-shadow:0 8px 24px rgba(34,211,238,.25);transition:transform .15s,opacity .2s;margin-top:6px;}
+  .btn:active{transform:scale(.98);}
+  .btn:disabled{opacity:.5;}
+  .error{background:rgba(242,109,109,.1);color:var(--rojo);border:1px solid rgba(242,109,109,.3);border-radius:10px;padding:11px;font-size:14px;text-align:center;margin-bottom:14px;display:none;}
+  .error.ver{display:block;}
+  .pie{text-align:center;font-size:12px;color:var(--tenue);margin-top:20px;font-weight:300;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="caja">
+  <div class="marca">
+    <div class="logo">💧</div>
+    <h1 id="negocio">{{ configuracion.nombre_negocio }}</h1>
+    <p>Inicia sesión para continuar</p>
+  </div>
+  <form class="form" id="formLogin" onsubmit="entrar(event)">
+    <div class="error" id="error"></div>
+    <div class="campo">
+      <label for="usuario">Usuario</label>
+      <input id="usuario" autocomplete="username" autocapitalize="none" required>
+    </div>
+    <div class="campo">
+      <label for="password">Contraseña</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn" id="btn" type="submit">Entrar</button>
+  </form>
+  <div class="pie">Cada quien entra con su propio usuario.<br>Si no recuerdas tu acceso, pídelo al administrador.</div>
+</div>
+
+<script>
+  "use strict";
+  async function entrar(e){
+    e.preventDefault();
+    var btn = document.getElementById("btn");
+    var err = document.getElementById("error");
+    err.classList.remove("ver");
+    btn.disabled = true; btn.textContent = "Entrando…";
+    try{
+      var r = await fetch("/api/login", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          usuario: document.getElementById("usuario").value.trim(),
+          password: document.getElementById("password").value
+        })
+      });
+      var d = await r.json();
+      if(d.ok){ window.location.href = "/"; return; }
+      err.textContent = d.error || "No se pudo iniciar sesión.";
+      err.classList.add("ver");
+    }catch(ex){
+      err.textContent = "Sin conexión. Reintenta.";
+      err.classList.add("ver");
+    }
+    btn.disabled = false; btn.textContent = "Entrar";
+  }
+</script>
+</body>
+</html>

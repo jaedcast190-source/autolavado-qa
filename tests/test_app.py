@@ -28,6 +28,24 @@ def cliente():
 
     appmod.app.config.update(TESTING=True)
     with appmod.app.test_client() as c:
+        # Inicia sesión como admin para las pruebas de endpoints protegidos.
+        c.post("/api/login", json={"usuario": "admin", "password": "admin123"})
+        yield c
+    os.unlink(tmp.name)
+
+
+@pytest.fixture()
+def cliente_sin_login():
+    tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    tmp.close()
+    os.environ.pop("DATABASE_URL", None)
+    os.environ["SQLITE_PATH"] = tmp.name
+    import db as dbmod
+    importlib.reload(dbmod)
+    import app as appmod
+    importlib.reload(appmod)
+    appmod.app.config.update(TESTING=True)
+    with appmod.app.test_client() as c:
         yield c
     os.unlink(tmp.name)
 
@@ -272,3 +290,49 @@ def test_patch_activos_reemplaza_los_de_hoy(cliente):
 def test_patch_activos_rechaza_sin_fecha(cliente):
     r = cliente.patch("/api/estado/activos", json={"vehiculos": []})
     assert r.status_code == 400
+
+
+# --- Login y roles ---
+def test_login_correcto(cliente_sin_login):
+    r = cliente_sin_login.post("/api/login", json={"usuario": "admin", "password": "admin123"})
+    assert r.status_code == 200
+    assert r.get_json()["usuario"]["rol"] == "admin"
+
+
+def test_login_incorrecto(cliente_sin_login):
+    r = cliente_sin_login.post("/api/login", json={"usuario": "admin", "password": "mala"})
+    assert r.status_code == 401
+
+
+def test_login_tecnico(cliente_sin_login):
+    r = cliente_sin_login.post("/api/login", json={"usuario": "irving", "password": "irving123"})
+    assert r.status_code == 200
+    u = r.get_json()["usuario"]
+    assert u["rol"] == "tecnico" and u["tecnicoId"] == "p1"
+
+
+def test_estado_requiere_login(cliente_sin_login):
+    r = cliente_sin_login.get("/api/estado")
+    assert r.status_code == 401
+
+
+def test_config_put_solo_admin(cliente_sin_login):
+    # Login como técnico (no admin)
+    cliente_sin_login.post("/api/login", json={"usuario": "irving", "password": "irving123"})
+    r = cliente_sin_login.put("/api/config", json={"nombre_negocio": "X", "servicios": {"A": {"precio": 1, "minutos": 1}}})
+    assert r.status_code == 403  # técnico no puede configurar
+
+
+def test_logout(cliente):
+    r = cliente.post("/api/logout")
+    assert r.status_code == 200
+    # Tras logout, el estado ya no es accesible
+    assert cliente.get("/api/estado").status_code == 401
+
+
+def test_password_hash_verifica():
+    import db
+    h = db.hashear_password("secreto")
+    assert db.verificar_password("secreto", h)
+    assert not db.verificar_password("otro", h)
+    assert "$" in h and "secreto" not in h  # no guarda texto plano
