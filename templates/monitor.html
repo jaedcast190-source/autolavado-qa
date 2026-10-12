@@ -3,135 +3,175 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ configuracion.nombre_negocio }} — Monitor de lavado</title>
+<title>{{ configuracion.nombre_negocio }} — Central de lavado</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   :root{
-    --bg:#0a0e14; --panel:#121923; --borde:#1f2a38; --tinta:#e8eef4;
-    --suave:#7c8a99; --azul:#19b6cf; --verde:#2fd27e; --ambar:#f4b740;
+    --carbon:#0B0E11; --carbon2:#121820; --linea:#1d2733;
+    --agua:#22D3EE; --agua2:#0EA5B5; --teal:#0b8a9c;
+    --blanco:#F3F7FA; --suave:#8A9AA8; --tenue:#56687a;
+    --oro:#D4A84B; --verde:#34D399;
   }
   html,body{height:100%;}
-  body{background:var(--bg);color:var(--tinta);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden;}
-  .barra-top{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--borde);background:#0d131b;}
-  .barra-top h1{font-size:17px;font-weight:600;letter-spacing:.3px;}
-  .barra-top h1 small{color:var(--suave);font-weight:400;margin-left:8px;}
-  .reloj{font-size:18px;font-variant-numeric:tabular-nums;color:var(--azul);font-weight:600;}
-  /* Rejilla que se adapta al número de autos */
-  #grid{height:calc(100vh - 56px);display:grid;gap:12px;padding:12px;}
+  body{
+    background:
+      radial-gradient(120% 70% at 50% -5%, #16202b 0%, rgba(11,14,17,0) 55%),
+      var(--carbon);
+    color:var(--blanco);
+    font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    overflow:hidden;-webkit-font-smoothing:antialiased;
+  }
+  .barra-top{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;border-bottom:1px solid var(--linea);}
+  .barra-top .marca{display:flex;align-items:center;gap:11px;}
+  .barra-top .ico{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--agua),var(--teal));display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 0 22px rgba(34,211,238,.35);}
+  .barra-top h1{font-size:16px;font-weight:600;}
+  .barra-top h1 small{color:var(--suave);font-weight:300;margin-left:8px;}
+  .top-right{display:flex;align-items:center;gap:22px;}
+  .vivo{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--suave);}
+  .punto{width:8px;height:8px;border-radius:50%;background:var(--verde);animation:latir 2s infinite;}
+  @keyframes latir{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5);}70%{box-shadow:0 0 0 9px rgba(52,211,153,0);}100%{box-shadow:0 0 0 0 rgba(52,211,153,0);}}
+  .reloj{font-size:19px;font-variant-numeric:tabular-nums;color:var(--agua);font-weight:600;}
+
+  #grid{height:calc(100vh - 60px);display:grid;gap:14px;padding:14px;}
   #grid.g1{grid-template-columns:1fr;grid-template-rows:1fr;}
   #grid.g2{grid-template-columns:1fr 1fr;grid-template-rows:1fr;}
   #grid.g3{grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr;}
   #grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
-  @media(max-width:800px){
-    #grid.g2,#grid.g3,#grid.g4{grid-template-columns:1fr;grid-template-rows:none;grid-auto-rows:minmax(220px,1fr);height:auto;overflow-y:auto;}
+  @media(max-width:860px){
+    #grid.g2,#grid.g3,#grid.g4{grid-template-columns:1fr;grid-template-rows:none;grid-auto-rows:minmax(300px,1fr);height:auto;overflow-y:auto;}
     body{overflow:auto;}
   }
-  .panel{background:var(--panel);border:1px solid var(--borde);border-radius:16px;padding:22px;display:flex;flex-direction:column;position:relative;overflow:hidden;}
-  .panel.pausado{border-color:var(--ambar);}
-  .p-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-  .placa{font-size:clamp(26px,4vw,46px);font-weight:800;letter-spacing:1px;line-height:1;}
-  .sub{color:var(--suave);font-size:14px;margin-top:6px;}
-  .bahia-tag{background:#16212e;border:1px solid var(--borde);color:var(--azul);font-size:13px;font-weight:700;padding:6px 12px;border-radius:20px;white-space:nowrap;}
-  .servicio{display:inline-block;background:#13202b;color:var(--azul);font-size:13px;padding:4px 11px;border-radius:20px;margin-top:4px;}
-  .fase-nombre{font-size:clamp(20px,3vw,34px);font-weight:700;margin:auto 0 6px;}
-  .fase-meta{color:var(--suave);font-size:14px;margin-bottom:12px;}
-  .barra{height:14px;background:#1b2735;border-radius:20px;overflow:hidden;margin-bottom:10px;}
-  .barra-fill{height:100%;background:linear-gradient(90deg,var(--azul),var(--verde));border-radius:20px;transition:width .6s;}
-  .chips{display:flex;flex-wrap:wrap;gap:6px;}
-  .chip{font-size:12px;padding:4px 10px;border-radius:20px;background:#1a2533;color:var(--suave);}
-  .chip.hecha{background:#15321f;color:var(--verde);}
-  .chip.actual{background:var(--azul);color:#04222a;font-weight:800;}
-  .tiempo{position:absolute;bottom:18px;right:22px;font-size:14px;color:var(--suave);font-variant-numeric:tabular-nums;}
-  .pausa-flag{position:absolute;top:0;left:0;right:0;background:var(--ambar);color:#3a2a00;text-align:center;font-weight:700;font-size:13px;padding:4px;}
-  .vacio{height:calc(100vh - 56px);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--suave);gap:12px;text-align:center;padding:20px;}
-  .vacio .icono{font-size:54px;opacity:.5;}
-  .vacio h2{font-weight:600;font-size:20px;color:var(--tinta);}
+
+  .panel{
+    border:1px solid var(--linea);border-radius:20px;position:relative;overflow:hidden;
+    display:flex;flex-direction:column;padding:24px;
+    background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0)), var(--carbon2);
+  }
+  .panel.pausado{border-color:rgba(212,168,75,.5);}
+  .p-head{display:flex;justify-content:space-between;align-items:flex-start;z-index:4;position:relative;}
+  .placa{font-size:clamp(28px,3.4vw,52px);font-weight:800;letter-spacing:1.5px;line-height:.95;}
+  .cliente{color:var(--suave);font-size:14px;margin-top:6px;font-weight:300;}
+  .servicio{display:inline-block;background:rgba(34,211,238,.1);color:var(--agua);font-size:12px;padding:4px 11px;border-radius:20px;margin-top:8px;}
+  .bahia-tag{background:rgba(255,255,255,.04);border:1px solid var(--linea);color:var(--agua);font-size:13px;font-weight:700;padding:7px 13px;border-radius:20px;white-space:nowrap;}
+
+  /* Escena del auto dentro del panel */
+  .escena{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:90px;margin:8px 0;}
+  .halo{position:absolute;width:62%;height:55%;border-radius:50%;background:radial-gradient(ellipse at center, rgba(34,211,238,.16), rgba(34,211,238,0) 70%);filter:blur(5px);}
+  .auto-svg{position:relative;width:min(82%,340px);height:auto;z-index:2;}
+  .fx{position:absolute;inset:0;z-index:3;pointer-events:none;}
+  .gota{position:absolute;width:3px;height:12px;border-radius:3px;background:linear-gradient(var(--agua),rgba(34,211,238,0));opacity:0;animation:caer 1.3s linear infinite;}
+  @keyframes caer{0%{transform:translateY(-14px);opacity:0;}20%{opacity:.9;}100%{transform:translateY(90px);opacity:0;}}
+  .espuma{position:absolute;border-radius:50%;background:rgba(255,255,255,.9);opacity:0;animation:burbuja 2.2s ease-in-out infinite;}
+  @keyframes burbuja{0%{transform:translateY(8px) scale(.6);opacity:0;}30%{opacity:.85;}100%{transform:translateY(-24px) scale(1);opacity:0;}}
+  .destello{position:absolute;width:38px;height:38px;background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,0) 70%);opacity:0;animation:brillar 2.6s ease-in-out infinite;}
+  @keyframes brillar{0%,100%{opacity:0;transform:scale(.4);}50%{opacity:1;transform:scale(1);}}
+
+  .fase-nom{font-size:clamp(22px,2.8vw,40px);font-weight:700;background:linear-gradient(90deg,var(--blanco),var(--agua));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;z-index:4;position:relative;}
+  .fase-meta{color:var(--tenue);font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-top:2px;z-index:4;position:relative;}
+  .track{height:5px;background:var(--linea);border-radius:20px;overflow:hidden;margin:14px 0 12px;z-index:4;position:relative;}
+  .track-fill{height:100%;background:linear-gradient(90deg,var(--agua2),var(--agua));border-radius:20px;transition:width 1s cubic-bezier(.4,0,.2,1);box-shadow:0 0 12px rgba(34,211,238,.55);}
+  .pie{display:flex;justify-content:space-between;align-items:center;z-index:4;position:relative;}
+  .resp{color:var(--suave);font-size:13px;}
+  .tiempo{color:var(--suave);font-size:13px;font-variant-numeric:tabular-nums;}
+  .pausa-flag{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--oro);color:#2a2000;font-weight:700;font-size:12px;padding:5px 14px;border-radius:20px;z-index:5;}
+
+  .vacio{height:calc(100vh - 60px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:20px;}
+  .vacio .ico{font-size:60px;filter:drop-shadow(0 6px 22px rgba(34,211,238,.35));}
+  .vacio h2{font-weight:600;font-size:22px;}
+  .vacio p{color:var(--suave);font-weight:300;}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
 <body>
   <div class="barra-top">
-    <h1><b id="negocio">{{ configuracion.nombre_negocio }}</b><small>Monitor de lavado en vivo</small></h1>
-    <div class="reloj" id="reloj">--:--</div>
+    <div class="marca"><span class="ico">💧</span><h1><b id="negocio">{{ configuracion.nombre_negocio }}</b><small>Central de lavado</small></h1></div>
+    <div class="top-right">
+      <div class="vivo"><span class="punto"></span>En vivo</div>
+      <div class="reloj" id="reloj">--:--</div>
+    </div>
   </div>
   <div id="grid" class="g1"></div>
 
 <script>
   "use strict";
-  var CONFIG = {};
-  var vehiculos = [];
-
+  var CONFIG = {}, vehiculos = [];
   function escapar(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-
   function fasesActivas(){ return (CONFIG.fases||[]).filter(function(f){return f.activo!==false;}); }
+  function minutosDesde(iso){ if(!iso) return 0; var t=new Date(iso).getTime(); return isNaN(t)?0:Math.max(0,Math.floor((Date.now()-t)/60000)); }
 
-  function minutosDesde(iso){
-    if(!iso) return 0;
-    var t=new Date(iso).getTime();
-    if(isNaN(t)) return 0;
-    return Math.max(0, Math.floor((Date.now()-t)/60000));
+  function autoSVG(tint){
+    return '<svg class="auto-svg" viewBox="0 0 300 130" fill="none" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><linearGradient id="b'+tint.id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+tint.top+'"/><stop offset="1" stop-color="'+tint.bot+'"/></linearGradient>'
+      + '<linearGradient id="g'+tint.id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3b4d"/><stop offset="1" stop-color="#14202c"/></linearGradient></defs>'
+      + '<path d="M18 92 C18 80 30 78 40 77 L70 56 C78 50 90 46 104 46 L186 46 C205 46 220 52 232 66 L258 78 C274 80 286 83 286 95 L286 101 C286 105 283 108 279 108 L25 108 C21 108 18 105 18 101 Z" fill="url(#b'+tint.id+')" stroke="'+tint.edge+'" stroke-width="1.5"/>'
+      + '<path d="M78 58 L100 50 L142 50 L142 72 L72 72 Z" fill="url(#g'+tint.id+')"/>'
+      + '<path d="M150 50 L182 50 C196 50 206 54 214 64 L222 72 L150 72 Z" fill="url(#g'+tint.id+')"/>'
+      + '<path d="M80 57 L100 50 L138 50 L138 54 L86 54 Z" fill="rgba(255,255,255,'+tint.shine+')"/>'
+      + '<circle cx="86" cy="108" r="19" fill="#0c1116" stroke="'+tint.edge+'" stroke-width="2"/><circle cx="86" cy="108" r="8" fill="#1c2a37"/>'
+      + '<circle cx="222" cy="108" r="19" fill="#0c1116" stroke="'+tint.edge+'" stroke-width="2"/><circle cx="222" cy="108" r="8" fill="#1c2a37"/>'
+      + '</svg>';
+  }
+  function efectos(tipo){
+    if(tipo==="agua"){ var g=""; for(var i=0;i<12;i++){ g+='<span class="gota" style="left:'+(14+i*6)+'%;animation-delay:'+(i*0.1)+'s"></span>'; } return '<div class="fx">'+g+'</div>'; }
+    if(tipo==="espuma"){ var e=""; for(var j=0;j<14;j++){ var s=4+Math.round(Math.random()*6); e+='<span class="espuma" style="left:'+(16+j*5)+'%;bottom:'+(20+Math.random()*40)+'%;width:'+s+'px;height:'+s+'px;animation-delay:'+(j*0.14)+'s"></span>'; } return '<div class="fx">'+e+'</div>'; }
+    if(tipo==="brillo"){ return '<div class="fx"><span class="destello" style="top:30%;left:22%"></span><span class="destello" style="top:40%;left:58%;animation-delay:1.1s"></span></div>'; }
+    return "";
+  }
+  function apariencia(idx,total,id){
+    var p = total>1 ? idx/(total-1) : 1;
+    if(p<0.34) return {tint:{id:id,top:"#3a4653",bot:"#222b34",edge:"#55707f",shine:.05}, fx:"agua"};
+    if(p<0.67) return {tint:{id:id,top:"#5b7a8a",bot:"#2f4350",edge:"#7fb6c6",shine:.14}, fx:"espuma"};
+    if(p<0.99) return {tint:{id:id,top:"#7fb9c9",bot:"#3a5d6b",edge:"#b4e4f0",shine:.25}, fx:"agua"};
+    return {tint:{id:id,top:"#a9e6f3",bot:"#4e7f8e",edge:"#d9f6fc",shine:.4}, fx:"brillo"};
   }
 
   async function cargar(){
     try{
-      var rc = await fetch("/api/config",{cache:"no-store"});
-      if(rc.ok) CONFIG = await rc.json();
-      var re = await fetch("/api/estado",{cache:"no-store"});
-      if(re.ok){ var d = await re.json(); vehiculos = (d.estado && d.estado.vehiculos) || []; }
+      var rc=await fetch("/api/config",{cache:"no-store"}); if(rc.ok) CONFIG=await rc.json();
+      var re=await fetch("/api/estado",{cache:"no-store"}); if(re.ok){ var d=await re.json(); vehiculos=(d.estado&&d.estado.vehiculos)||[]; }
       document.getElementById("negocio").textContent = CONFIG.nombre_negocio || "Autolavado";
       pintar();
-    }catch(e){ /* reintenta en el próximo ciclo */ }
+    }catch(e){}
   }
 
   function pintar(){
     var fases = fasesActivas();
-    // Solo autos en proceso (máximo 4 por diseño del negocio)
     var activos = vehiculos.filter(function(v){return v.estado==="En proceso";}).slice(0,4);
     var grid = document.getElementById("grid");
-
     if(!activos.length){
-      grid.className = "";
-      grid.innerHTML = '<div class="vacio"><div class="icono">🚿</div><h2>Sin autos en lavado ahora mismo</h2><p>Cuando un técnico inicie un servicio, aparecerá aquí su avance en vivo.</p></div>';
+      grid.className="";
+      grid.innerHTML='<div class="vacio"><div class="ico">💧</div><h2>Sin autos en lavado</h2><p>El avance de cada servicio aparecerá aquí en cuanto comience.</p></div>';
       return;
     }
-
-    grid.className = "g" + activos.length;
-    grid.innerHTML = activos.map(function(v){
-      var idx = typeof v.faseActual==="number" ? v.faseActual : 0;
-      idx = Math.max(0, Math.min(idx, Math.max(0,fases.length-1)));
-      var faseNom = fases[idx] ? fases[idx].nombre : "En proceso";
-      var pct = fases.length ? Math.round(((idx+1)/fases.length)*100) : 0;
-      var chips = fases.map(function(f,k){
-        var c = k<idx ? "chip hecha" : (k===idx ? "chip actual" : "chip");
-        return '<span class="'+c+'">'+escapar(f.nombre)+'</span>';
-      }).join("");
+    grid.className="g"+activos.length;
+    grid.innerHTML = activos.map(function(v,n){
+      var idx = typeof v.faseActual==="number"?v.faseActual:0;
+      if(fases.length) idx=Math.max(0,Math.min(idx,fases.length-1));
+      var faseNom = fases[idx]?fases[idx].nombre:"En proceso";
+      var pct = fases.length?Math.round(((idx+1)/fases.length)*100):0;
+      var ap = apariencia(idx,Math.max(1,fases.length),n);
       var pausado = !!v.pausaInicio;
-      var trabajado = v.inicioReal ? minutosDesde(v.pausaInicio || v.inicioReal) : 0;
       var tiempoTxt = v.inicioReal ? ("Lleva "+minutosDesde(v.inicioReal)+" min") : "";
       return '<div class="panel'+(pausado?' pausado':'')+'">'
-        + (pausado ? '<div class="pausa-flag">⏸ PAUSADO · '+escapar(v.motivoPausa||"")+'</div>' : '')
-        + '<div class="p-top"><div><div class="placa">'+escapar(v.placa||v.sub||"—")+'</div>'
-        +   '<div class="sub">'+escapar(v.resp||"")+(v.nombre?' · '+escapar(v.nombre):'')+'</div>'
+        + '<div class="p-head"><div><div class="placa">'+escapar(v.placa||v.sub||"—")+'</div>'
+        +   (v.nombre?'<div class="cliente">'+escapar(v.nombre)+'</div>':'')
         +   '<span class="servicio">'+escapar(v.lavado||"")+'</span></div>'
         +   '<span class="bahia-tag">'+escapar(v.bahia||"")+'</span></div>'
-        + '<div class="fase-nombre">'+escapar(faseNom)+'</div>'
+        + '<div class="escena"><div class="halo"></div>'+autoSVG(ap.tint)+(pausado?"":efectos(ap.fx))
+        +   (pausado?'<div class="pausa-flag">⏸ En pausa</div>':'')+'</div>'
+        + '<div class="fase-nom">'+escapar(faseNom)+'</div>'
         + '<div class="fase-meta">Fase '+(idx+1)+' de '+fases.length+'</div>'
-        + '<div class="barra"><div class="barra-fill" style="width:'+pct+'%"></div></div>'
-        + '<div class="chips">'+chips+'</div>'
-        + '<div class="tiempo">'+escapar(tiempoTxt)+'</div>'
+        + '<div class="track"><div class="track-fill" style="width:'+pct+'%"></div></div>'
+        + '<div class="pie"><span class="resp">'+escapar(v.resp||"")+'</span><span class="tiempo">'+escapar(tiempoTxt)+'</span></div>'
         + '</div>';
     }).join("");
   }
 
-  function tictac(){
-    var d=new Date();
-    document.getElementById("reloj").textContent =
-      String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0");
-  }
-
-  cargar();
-  tictac();
-  setInterval(tictac, 1000);
-  setInterval(cargar, 8000);   // refresca datos cada 8 segundos
+  function tictac(){ var d=new Date(); document.getElementById("reloj").textContent=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0"); }
+  cargar(); tictac();
+  setInterval(tictac,1000);
+  setInterval(cargar,8000);
 </script>
 </body>
 </html>
