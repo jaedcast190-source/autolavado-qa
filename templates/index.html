@@ -552,10 +552,18 @@
     if(guardadoEnVuelo){ guardadoPendiente = true; return; }
     guardadoEnVuelo = true;
     try{
-      var r = await fetch("/api/estado", {
-        method:"PUT",
+      // Optimización: enviamos solo los autos de HOY (los que cambian),
+      // no el histórico. El servidor conserva los días anteriores.
+      // Esto reduce el envío de cientos de KB a unos pocos.
+      var hoy = fechaLocalISO();
+      var activos = vehiculos.filter(function(v){
+        var f = (v.creadoEn && v.creadoEn !== "demo") ? String(v.creadoEn).slice(0,10) : hoy;
+        return f === hoy;
+      });
+      var r = await fetch("/api/estado/activos", {
+        method:"PATCH",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({folioNum:folioNum, vehiculos:vehiculos, cierresCaja:cierresCaja, salidasCaja:salidasCaja})
+        body: JSON.stringify({hoy:hoy, folioNum:folioNum, vehiculos:activos, cierresCaja:cierresCaja, salidasCaja:salidasCaja})
       });
       if(!r.ok) throw new Error("respuesta no OK");
     }catch(err){

@@ -338,6 +338,50 @@ def api_guardar_estado():
     return jsonify(ok=True)
 
 
+def _fecha_vehiculo(v):
+    """Devuelve la fecha (YYYY-MM-DD) en que se registró el vehículo."""
+    creado = v.get("creadoEn")
+    if not isinstance(creado, str) or creado == "demo":
+        return None
+    return creado[:10] if len(creado) >= 10 else None
+
+
+@app.patch("/api/estado/activos")
+def api_guardar_activos():
+    """Optimización: el frontend envía SOLO los autos activos (de hoy y sin
+    entregar), no el histórico. El servidor conserva los históricos que ya
+    tiene guardados y solo reemplaza la parte activa. Esto reduce el envío de
+    cientos de KB a unos pocos, sobre todo en redes móviles."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(ok=False, error="Se requiere un objeto JSON"), 400
+    activos = data.get("vehiculos")
+    hoy = data.get("hoy")
+    if not isinstance(activos, list) or not isinstance(hoy, str):
+        return jsonify(ok=False, error="Falta la lista de activos o la fecha de hoy"), 400
+
+    estado = db.leer_estado() or dict(db.ESTADO_POR_DEFECTO)
+    previos = estado.get("vehiculos", [])
+
+    # Conserva del servidor todo lo que NO es "de hoy ni activo":
+    # es decir, los históricos (días anteriores) y los ya entregados de hoy
+    # no vienen en la carga del frontend. Reconstruimos:
+    #   histórico = autos cuya fecha != hoy  (no los toca el frontend)
+    #   los de hoy los reemplaza por completo con lo que mandó el frontend.
+    historico = [v for v in previos if _fecha_vehiculo(v) != hoy]
+    estado["vehiculos"] = historico + activos
+
+    if str(data.get("folioNum", "")).lstrip("-").isdigit():
+        estado["folioNum"] = int(data["folioNum"])
+    if isinstance(data.get("cierresCaja"), list):
+        estado["cierresCaja"] = data["cierresCaja"]
+    if isinstance(data.get("salidasCaja"), list):
+        estado["salidasCaja"] = data["salidasCaja"]
+
+    db.guardar_estado(estado)
+    return jsonify(ok=True)
+
+
 # ---------------------------------------------------------------------------
 # Seguridad e inicialización
 # ---------------------------------------------------------------------------

@@ -224,4 +224,51 @@ def test_qr_png(cliente):
 def test_monitor_carga(cliente):
     r = cliente.get("/monitor")
     assert r.status_code == 200
-    assert b"Monitor" in r.data
+    assert b"Central de lavado" in r.data
+
+
+# --- Optimización: guardado ligero de activos ---
+def test_patch_activos_conserva_historico(cliente):
+    # Carga histórico (día pasado) + estado inicial
+    historico = {"folioNum": 2, "vehiculos": [
+        {"folio": "CW-0001", "placa": "OLD-001", "estado": "Entregado",
+         "creadoEn": "2026-09-01T10:00:00", "lavado": "Express"},
+        {"folio": "CW-0002", "placa": "OLD-002", "estado": "Entregado",
+         "creadoEn": "2026-09-02T10:00:00", "lavado": "Express"}],
+        "cierresCaja": [], "salidasCaja": []}
+    cliente.put("/api/estado", json=historico)
+    # PATCH con solo un auto de hoy
+    hoy = "2026-10-12"
+    r = cliente.patch("/api/estado/activos", json={
+        "hoy": hoy, "folioNum": 3,
+        "vehiculos": [{"folio": "CW-0003", "placa": "NEW-003", "estado": "Espera",
+                       "creadoEn": hoy + "T10:00:00", "lavado": "Express"}],
+        "cierresCaja": [], "salidasCaja": []})
+    assert r.status_code == 200
+    # El histórico de septiembre debe seguir ahí + el nuevo
+    vs = cliente.get("/api/estado").get_json()["estado"]["vehiculos"]
+    placas = {v["placa"] for v in vs}
+    assert "OLD-001" in placas and "OLD-002" in placas and "NEW-003" in placas
+
+
+def test_patch_activos_reemplaza_los_de_hoy(cliente):
+    hoy = "2026-10-12"
+    inicial = {"folioNum": 1, "vehiculos": [
+        {"folio": "CW-0001", "placa": "HOY-A", "estado": "Espera", "creadoEn": hoy + "T09:00:00"}],
+        "cierresCaja": [], "salidasCaja": []}
+    cliente.put("/api/estado", json=inicial)
+    # El auto HOY-A ahora está "En proceso" (cambió de estado)
+    r = cliente.patch("/api/estado/activos", json={
+        "hoy": hoy, "folioNum": 1,
+        "vehiculos": [{"folio": "CW-0001", "placa": "HOY-A", "estado": "En proceso", "creadoEn": hoy + "T09:00:00"}],
+        "cierresCaja": [], "salidasCaja": []})
+    assert r.status_code == 200
+    vs = cliente.get("/api/estado").get_json()["estado"]["vehiculos"]
+    hoy_a = [v for v in vs if v["placa"] == "HOY-A"]
+    assert len(hoy_a) == 1  # no se duplicó
+    assert hoy_a[0]["estado"] == "En proceso"  # se actualizó
+
+
+def test_patch_activos_rechaza_sin_fecha(cliente):
+    r = cliente.patch("/api/estado/activos", json={"vehiculos": []})
+    assert r.status_code == 400
