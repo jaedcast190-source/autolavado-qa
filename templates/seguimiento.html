@@ -2,82 +2,186 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seguimiento de tu lavado</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Tu lavado en vivo</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  :root{--azul:#087d8c;--azul2:#0aa2b8;--verde:#2f9e52;--bg:#eef4f6;--tinta:#1a2a31;--suave:#6a7f84;--borde:#d6e3e6;}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tinta);-webkit-font-smoothing:antialiased;min-height:100vh;}
-  .wrap{max-width:460px;margin:0 auto;padding:22px 18px 40px;}
-  .marca{text-align:center;margin-bottom:18px;}
-  .marca .logo{width:56px;height:56px;border-radius:15px;background:linear-gradient(135deg,var(--azul2),var(--azul));display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 10px;}
-  .marca h1{font-size:18px;font-weight:700;}
-  .marca p{font-size:13px;color:var(--suave);}
-  .card{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
-  .placa{font-size:30px;font-weight:800;letter-spacing:1px;text-align:center;}
-  .folio{text-align:center;color:var(--suave);font-size:13px;margin-top:2px;}
-  .estado-grande{text-align:center;margin:16px 0;}
-  .estado-grande .fase{font-size:26px;font-weight:800;color:var(--azul);}
-  .estado-grande .meta{color:var(--suave);font-size:14px;margin-top:4px;}
-  .barra{height:14px;background:#dcebee;border-radius:20px;overflow:hidden;margin:14px 0;}
-  .barra-fill{height:100%;background:linear-gradient(90deg,var(--azul2),var(--verde));border-radius:20px;transition:width .6s;}
-  .pasos{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
-  .paso{display:flex;align-items:center;gap:10px;font-size:14px;}
-  .paso .bolita{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;background:#e3edef;color:var(--suave);}
-  .paso.hecha .bolita{background:var(--verde);color:#fff;}
-  .paso.actual .bolita{background:var(--azul);color:#fff;}
-  .paso.actual{font-weight:700;color:var(--azul);}
-  .detalle{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef3f4;font-size:14px;}
-  .detalle:last-child{border-bottom:0;}
-  .detalle .lbl{color:var(--suave);}
-  .detalle .val{font-weight:600;}
-  .aviso{background:#fff4d8;color:#78500d;border-radius:10px;padding:12px;font-size:14px;text-align:center;margin-top:10px;}
-  .listo-box{text-align:center;padding:6px;}
-  .listo-box .check{font-size:46px;}
-  .listo-box h2{font-size:20px;margin:6px 0;}
-  .estrellas{display:flex;justify-content:center;gap:8px;margin:14px 0;}
-  .estrella{font-size:38px;color:#d3d8da;cursor:pointer;transition:transform .1s;}
-  .estrella:hover{transform:scale(1.15);}
-  .estrella.on{color:#f0a818;}
-  textarea{width:100%;border:1px solid var(--borde);border-radius:10px;padding:10px;font-family:inherit;font-size:14px;resize:vertical;min-height:60px;}
-  .btn{width:100%;background:var(--azul);color:#fff;border:0;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;font-family:inherit;}
-  .btn:disabled{opacity:.5;}
-  .cargando,.error{text-align:center;color:var(--suave);padding:40px 20px;}
-  .gracias{text-align:center;color:var(--verde);font-weight:600;padding:14px;}
-  .foot{text-align:center;font-size:11px;color:var(--suave);margin-top:20px;}
+  :root{
+    --carbon:#0B0E11; --carbon2:#121820; --linea:#1d2733;
+    --agua:#22D3EE; --agua2:#0EA5B5; --teal:#0b8a9c;
+    --blanco:#F3F7FA; --suave:#8A9AA8; --tenue:#56687a;
+    --oro:#D4A84B; --verde:#34D399;
+  }
+  html,body{min-height:100%;}
+  body{
+    font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:
+      radial-gradient(130% 80% at 50% -10%, #16202b 0%, rgba(11,14,17,0) 55%),
+      radial-gradient(90% 60% at 50% 120%, #10303a 0%, rgba(11,14,17,0) 60%),
+      var(--carbon);
+    background-attachment:fixed;
+    color:var(--blanco);-webkit-font-smoothing:antialiased;
+    min-height:100vh;padding:max(26px,env(safe-area-inset-top)) 20px 40px;
+  }
+  .lienzo{max-width:440px;margin:0 auto;}
+
+  /* Encabezado */
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px;}
+  .top .neg{display:flex;align-items:center;gap:10px;}
+  .top .marca-ico{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--agua),var(--teal));display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 0 22px rgba(34,211,238,.35);}
+  .top .neg b{font-size:15px;font-weight:600;letter-spacing:.2px;}
+  .vivo{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--suave);}
+  .punto{width:8px;height:8px;border-radius:50%;background:var(--verde);box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:latir 2s infinite;}
+  @keyframes latir{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5);}70%{box-shadow:0 0 0 9px rgba(52,211,153,0);}100%{box-shadow:0 0 0 0 rgba(52,211,153,0);}}
+
+  /* Placa */
+  .placa{font-size:clamp(40px,13vw,58px);font-weight:800;letter-spacing:2px;line-height:.95;text-align:center;}
+  .cliente{text-align:center;color:var(--suave);font-size:14px;margin-top:8px;font-weight:300;}
+
+  /* Escenario del auto */
+  .escena{position:relative;margin:18px 0 6px;height:210px;display:flex;align-items:center;justify-content:center;}
+  .halo{position:absolute;width:290px;height:150px;border-radius:50%;background:radial-gradient(ellipse at center, rgba(34,211,238,.18), rgba(34,211,238,0) 70%);filter:blur(6px);bottom:28px;transition:background .8s;}
+  .auto-svg{position:relative;width:300px;max-width:84%;height:auto;z-index:2;}
+  .piso{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);width:230px;height:10px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(7px);}
+
+  /* Gotas / espuma / brillo overlay */
+  .fx{position:absolute;inset:0;z-index:3;pointer-events:none;}
+  .gota{position:absolute;width:3px;height:12px;border-radius:3px;background:linear-gradient(var(--agua),rgba(34,211,238,0));opacity:0;animation:caer 1.3s linear infinite;}
+  @keyframes caer{0%{transform:translateY(-14px);opacity:0;}20%{opacity:.9;}100%{transform:translateY(120px);opacity:0;}}
+  .espuma{position:absolute;border-radius:50%;background:rgba(255,255,255,.9);opacity:0;animation:burbuja 2.2s ease-in-out infinite;}
+  @keyframes burbuja{0%{transform:translateY(8px) scale(.6);opacity:0;}30%{opacity:.85;}100%{transform:translateY(-26px) scale(1);opacity:0;}}
+  .destello{position:absolute;top:34%;left:18%;width:40px;height:40px;background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,0) 70%);opacity:0;animation:brillar 2.6s ease-in-out infinite;}
+  @keyframes brillar{0%,100%{opacity:0;transform:scale(.4);}50%{opacity:1;transform:scale(1);}}
+
+  /* Fase y progreso */
+  .fase-zona{text-align:center;margin-top:4px;}
+  .fase-num{font-size:12px;letter-spacing:3px;color:var(--tenue);text-transform:uppercase;}
+  .fase-nom{font-size:clamp(30px,8vw,40px);font-weight:700;margin:4px 0 2px;background:linear-gradient(90deg,var(--blanco),var(--agua));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .track{height:4px;background:var(--linea);border-radius:20px;overflow:hidden;margin:20px 0 14px;}
+  .track-fill{height:100%;background:linear-gradient(90deg,var(--agua2),var(--agua));border-radius:20px;transition:width 1s cubic-bezier(.4,0,.2,1);box-shadow:0 0 14px rgba(34,211,238,.6);}
+  .pasos{display:flex;justify-content:space-between;gap:4px;}
+  .paso{flex:1;text-align:center;font-size:10px;color:var(--tenue);letter-spacing:.2px;transition:color .5s;}
+  .paso .pto{width:9px;height:9px;border-radius:50%;background:var(--linea);margin:0 auto 6px;transition:all .5s;}
+  .paso.hecha .pto{background:var(--verde);}
+  .paso.hecha{color:var(--suave);}
+  .paso.actual .pto{background:var(--agua);box-shadow:0 0 0 4px rgba(34,211,238,.18);}
+  .paso.actual{color:var(--agua);font-weight:600;}
+
+  /* Tarjeta de datos */
+  .datos{margin-top:26px;border:1px solid var(--linea);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0));overflow:hidden;}
+  .dato{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid var(--linea);}
+  .dato:last-child{border-bottom:0;}
+  .dato .k{color:var(--suave);font-size:13px;font-weight:300;}
+  .dato .v{font-size:15px;font-weight:600;}
+  .dato .v.precio{color:var(--agua);}
+
+  /* Estados especiales */
+  .aviso{margin-top:16px;border:1px solid #3a3115;background:rgba(212,168,75,.08);color:var(--oro);border-radius:14px;padding:13px 16px;font-size:14px;text-align:center;}
+  .final{text-align:center;padding:14px 0;}
+  .final .emoji{font-size:54px;filter:drop-shadow(0 6px 20px rgba(34,211,238,.4));}
+  .final h2{font-size:26px;font-weight:700;margin:12px 0 4px;}
+  .final p{color:var(--suave);font-size:14px;font-weight:300;}
+
+  /* Calificación */
+  .califica{margin-top:24px;border:1px solid var(--linea);border-radius:18px;padding:24px 20px;text-align:center;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0));}
+  .califica h3{font-size:18px;font-weight:600;margin-bottom:4px;}
+  .califica .sub{color:var(--suave);font-size:13px;font-weight:300;margin-bottom:16px;}
+  .estrellas{display:flex;justify-content:center;gap:10px;margin-bottom:16px;}
+  .estrella{font-size:40px;color:#263241;cursor:pointer;transition:transform .15s,color .2s;line-height:1;}
+  .estrella:active{transform:scale(.9);}
+  .estrella.on{color:var(--oro);text-shadow:0 0 18px rgba(212,168,75,.5);}
+  .coment{width:100%;background:var(--carbon2);border:1px solid var(--linea);border-radius:12px;padding:12px;color:var(--blanco);font-family:inherit;font-size:14px;resize:vertical;min-height:58px;margin-bottom:14px;}
+  .coment::placeholder{color:var(--tenue);}
+  .btn{width:100%;border:0;border-radius:12px;padding:15px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--agua),var(--teal));color:#042229;box-shadow:0 8px 24px rgba(34,211,238,.25);transition:transform .15s,opacity .2s;}
+  .btn:active{transform:scale(.98);}
+  .btn:disabled{opacity:.4;box-shadow:none;cursor:default;}
+  .gracias{color:var(--oro);font-size:16px;font-weight:600;margin-top:4px;}
+  .gracias .est{letter-spacing:3px;font-size:22px;}
+
+  .estado-cargando,.estado-error{text-align:center;color:var(--suave);padding:70px 20px;font-weight:300;}
+  .estado-error .ic{font-size:40px;display:block;margin-bottom:12px;}
+  .pie{text-align:center;font-size:11px;color:var(--tenue);margin-top:26px;font-weight:300;}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="marca">
-    <div class="logo">🚿</div>
-    <h1 id="negocio">{{ configuracion.nombre_negocio }}</h1>
-    <p>Seguimiento de tu servicio</p>
+<div class="lienzo">
+  <div class="top">
+    <div class="neg"><span class="marca-ico">💧</span><b id="negocio">{{ configuracion.nombre_negocio }}</b></div>
+    <div class="vivo"><span class="punto"></span>En vivo</div>
   </div>
-  <div id="contenido"><div class="cargando">Cargando tu servicio…</div></div>
-  <div class="foot">Esta página se actualiza sola. Puedes dejarla abierta.</div>
+  <div id="contenido"><div class="estado-cargando">Conectando con tu servicio…</div></div>
+  <div class="pie">Actualización automática · deja esta pantalla abierta</div>
 </div>
 
 <script>
   "use strict";
   var CODIGO = {{ codigo|tojson }};
-  var yaCalifico = false;
-  var estrellaSel = 0;
+  var yaCalifico = false, estrellaSel = 0;
 
   function escapar(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+  // Silueta de auto en SVG. El "tono" del body cambia según avance.
+  function autoSVG(tint){
+    return '<svg class="auto-svg" viewBox="0 0 300 130" fill="none" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><linearGradient id="body" x1="0" y1="0" x2="0" y2="1">'
+      +   '<stop offset="0" stop-color="'+tint.top+'"/><stop offset="1" stop-color="'+tint.bot+'"/></linearGradient>'
+      +   '<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3b4d"/><stop offset="1" stop-color="#14202c"/></linearGradient></defs>'
+      // carrocería
+      + '<path d="M18 92 C18 80 30 78 40 77 L70 56 C78 50 90 46 104 46 L186 46 C205 46 220 52 232 66 L258 78 C274 80 286 83 286 95 L286 101 C286 105 283 108 279 108 L25 108 C21 108 18 105 18 101 Z" fill="url(#body)" stroke="'+tint.edge+'" stroke-width="1.5"/>'
+      // ventanas
+      + '<path d="M78 58 L100 50 L142 50 L142 72 L72 72 Z" fill="url(#glass)"/>'
+      + '<path d="M150 50 L182 50 C196 50 206 54 214 64 L222 72 L150 72 Z" fill="url(#glass)"/>'
+      // brillo superior
+      + '<path d="M80 57 L100 50 L138 50 L138 54 L86 54 Z" fill="rgba(255,255,255,'+tint.shine+')"/>'
+      // ruedas
+      + '<circle cx="86" cy="108" r="19" fill="#0c1116" stroke="'+tint.edge+'" stroke-width="2"/><circle cx="86" cy="108" r="8" fill="#1c2a37"/>'
+      + '<circle cx="222" cy="108" r="19" fill="#0c1116" stroke="'+tint.edge+'" stroke-width="2"/><circle cx="222" cy="108" r="8" fill="#1c2a37"/>'
+      + '</svg>';
+  }
+
+  // Overlay de efectos por fase (agua, espuma, brillo)
+  function efectos(tipo){
+    if(tipo === "agua"){
+      var g = "";
+      for(var i=0;i<14;i++){ g += '<span class="gota" style="left:'+(12+i*6)+'%;animation-delay:'+(i*0.09)+'s"></span>'; }
+      return '<div class="fx">'+g+'</div>';
+    }
+    if(tipo === "espuma"){
+      var e = "";
+      for(var j=0;j<16;j++){ var s=4+Math.round(Math.random()*7); e += '<span class="espuma" style="left:'+(14+j*5)+'%;bottom:'+(30+Math.random()*40)+'px;width:'+s+'px;height:'+s+'px;animation-delay:'+(j*0.13)+'s"></span>'; }
+      return '<div class="fx">'+e+'</div>';
+    }
+    if(tipo === "brillo"){
+      return '<div class="fx"><span class="destello" style="left:20%"></span><span class="destello" style="left:55%;animation-delay:1.1s"></span><span class="destello" style="left:78%;animation-delay:.6s"></span></div>';
+    }
+    return "";
+  }
+
+  // Mapea el avance (0..1) a apariencia del auto y tipo de efecto
+  function apariencia(idx, total){
+    var p = total > 1 ? idx/(total-1) : 1;
+    // Sucio (opaco) -> limpio (brillante azulado)
+    if(p < 0.34) return {tint:{top:"#3a4653",bot:"#222b34",edge:"#55707f",shine:.05}, fx:"agua"};
+    if(p < 0.67) return {tint:{top:"#5b7a8a",bot:"#2f4350",edge:"#7fb6c6",shine:.14}, fx:"espuma"};
+    if(p < 0.99) return {tint:{top:"#7fb9c9",bot:"#3a5d6b",edge:"#b4e4f0",shine:.25}, fx:"agua"};
+    return {tint:{top:"#a9e6f3",bot:"#4e7f8e",edge:"#d9f6fc",shine:.4}, fx:"brillo"};
+  }
 
   async function cargar(){
     try{
       var r = await fetch("/api/seguimiento/"+encodeURIComponent(CODIGO),{cache:"no-store"});
-      if(r.status === 404){ mostrarError("No encontramos un servicio con este código. Verifica el enlace o el QR."); return; }
+      if(r.status === 404){ return error("No encontramos un servicio con este código.\\nVerifica el enlace o el QR."); }
       var d = await r.json();
-      if(!d.ok){ mostrarError(d.error || "No se pudo cargar."); return; }
+      if(!d.ok){ return error(d.error || "No se pudo cargar tu servicio."); }
       pintar(d.vehiculo);
-    }catch(e){ /* reintenta al próximo ciclo */ }
+    }catch(e){ /* reintenta en el siguiente ciclo */ }
   }
 
-  function mostrarError(msg){
-    document.getElementById("contenido").innerHTML = '<div class="card"><div class="error">⚠️<br>'+escapar(msg)+'</div></div>';
+  function error(msg){
+    document.getElementById("contenido").innerHTML =
+      '<div class="estado-error"><span class="ic">🔍</span>'+escapar(msg).replace(/\\n/g,"<br>")+'</div>';
   }
 
   function pintar(v){
@@ -85,92 +189,107 @@
     var fases = v.fases || [];
     var cont = document.getElementById("contenido");
 
-    if(v.estado === "Entregado"){
-      cont.innerHTML = tarjetaEntregado(v);
-      return;
-    }
+    if(v.estado === "Entregado"){ cont.innerHTML = vistaFinal(v); engancharEstrellas(); return; }
 
-    var html = '<div class="card">'
-      + '<div class="placa">'+escapar(v.placa || "Tu vehículo")+'</div>'
-      + '<div class="folio">'+escapar(v.folio || "")+'</div>';
+    var html = '<div class="placa">'+escapar(v.placa || "Tu auto")+'</div>'
+      + (v.nombre ? '<div class="cliente">'+escapar(v.nombre)+'</div>' : '');
 
     if(v.estado === "Espera"){
-      html += '<div class="aviso">Tu vehículo está en espera. En breve comenzamos.</div>';
+      html += escena(apariencia(0,Math.max(1,fases.length)))
+        + '<div class="aviso">Tu vehículo está en recepción. Comenzamos en un momento.</div>';
     } else if(v.estado === "Listo"){
-      html += '<div class="estado-grande"><div class="fase">¡Listo! ✓</div><div class="meta">Tu vehículo está terminado. Puedes pasar por él.</div></div>';
-    } else if(v.estado === "En proceso"){
+      html += escena({tint:{top:"#a9e6f3",bot:"#4e7f8e",edge:"#d9f6fc",shine:.4},fx:"brillo"})
+        + '<div class="fase-zona"><div class="fase-nom">Listo para entrega</div></div>';
+    } else { // En proceso
       var idx = typeof v.faseActual === "number" ? v.faseActual : 0;
       if(fases.length) idx = Math.max(0, Math.min(idx, fases.length-1));
       var faseNom = fases[idx] ? fases[idx].nombre : "En proceso";
       var pct = fases.length ? Math.round(((idx+1)/fases.length)*100) : 0;
-      html += '<div class="estado-grande"><div class="fase">'+escapar(faseNom)+'</div><div class="meta">Paso '+(idx+1)+' de '+fases.length+'</div></div>';
-      if(v.pausado) html += '<div class="aviso">⏸ El servicio está pausado momentáneamente.</div>';
-      html += '<div class="barra"><div class="barra-fill" style="width:'+pct+'%"></div></div>';
-      html += '<div class="pasos">'+fases.map(function(f,k){
-        var c = k<idx ? "paso hecha" : (k===idx ? "paso actual" : "paso");
-        var ic = k<idx ? "✓" : (k+1);
-        return '<div class="'+c+'"><span class="bolita">'+ic+'</span>'+escapar(f.nombre)+'</div>';
-      }).join('')+'</div>';
-    }
-    html += '</div>';
+      var ap = apariencia(idx, Math.max(1,fases.length));
 
-    // Detalle del servicio
-    html += '<div class="card">'
+      html += escena(ap, v.pausado)
+        + '<div class="fase-zona">'
+        +   '<div class="fase-num">Fase '+(idx+1)+' de '+fases.length+'</div>'
+        +   '<div class="fase-nom">'+escapar(faseNom)+'</div>'
+        + '</div>'
+        + (v.pausado ? '<div class="aviso">En pausa un momento. Enseguida continuamos.</div>' : '')
+        + '<div class="track"><div class="track-fill" style="width:'+pct+'%"></div></div>'
+        + '<div class="pasos">'+fases.map(function(f,k){
+            var c = k<idx ? "paso hecha" : (k===idx ? "paso actual" : "paso");
+            return '<div class="'+c+'"><span class="pto"></span>'+escapar(f.nombre)+'</div>';
+          }).join('')+'</div>';
+    }
+
+    // Datos del servicio
+    html += '<div class="datos">'
       + fila("Servicio", v.lavado)
-      + (v.precio != null ? fila("Precio", "$"+v.precio) : "")
-      + fila("Bahía", v.bahia)
+      + (v.precio != null ? fila("Total", "$"+v.precio, true) : "")
+      + fila("Espacio", v.bahia)
       + fila("Atiende", v.resp)
-      + (v.entrega ? fila("Entrega estimada", v.entrega + " hrs") : "")
+      + (v.entrega ? fila("Entrega estimada", v.entrega + " h") : "")
       + '</div>';
 
     cont.innerHTML = html;
   }
 
-  function fila(lbl,val){
-    if(!val) return "";
-    return '<div class="detalle"><span class="lbl">'+escapar(lbl)+'</span><span class="val">'+escapar(val)+'</span></div>';
-  }
-
-  function tarjetaEntregado(v){
-    if(v.calif > 0 || yaCalifico){
-      return '<div class="card"><div class="listo-box"><div class="check">🎉</div><h2>¡Servicio entregado!</h2><p style="color:var(--suave)">Gracias por tu preferencia.</p></div>'
-        + (v.calif > 0 ? '<div class="gracias">Tu calificación: '+"★".repeat(v.calif)+'</div>' : '<div class="gracias">¡Gracias por calificar!</div>')
-        + '</div>';
-    }
-    // Pedir calificación
-    return '<div class="card"><div class="listo-box"><div class="check">🎉</div><h2>¡Tu vehículo está listo!</h2><p style="color:var(--suave)">¿Cómo quedó tu servicio?</p></div>'
-      + '<div class="estrellas" id="estrellas">'
-      +   [1,2,3,4,5].map(function(n){return '<span class="estrella" data-n="'+n+'" onclick="setEstrella('+n+')">★</span>';}).join('')
-      + '</div>'
-      + '<textarea id="comentario" placeholder="Comentario (opcional)"></textarea>'
-      + '<button class="btn" id="btnCalif" onclick="enviarCalif()" disabled>Enviar calificación</button>'
+  function escena(ap, pausado){
+    return '<div class="escena">'
+      + '<div class="halo"></div>'
+      + autoSVG(ap.tint)
+      + (pausado ? "" : efectos(ap.fx))
+      + '<div class="piso"></div>'
       + '</div>';
   }
 
-  function setEstrella(n){
-    estrellaSel = n;
-    document.querySelectorAll("#estrellas .estrella").forEach(function(e){
-      e.classList.toggle("on", Number(e.dataset.n) <= n);
+  function fila(k,val,esPrecio){
+    if(!val) return "";
+    return '<div class="dato"><span class="k">'+escapar(k)+'</span><span class="v'+(esPrecio?' precio':'')+'">'+escapar(val)+'</span></div>';
+  }
+
+  function vistaFinal(v){
+    var base = '<div class="final"><div class="emoji">✨</div><h2>¡Tu auto está listo!</h2><p>Gracias por confiar en nosotros.</p></div>'
+      + '<div class="datos">'+fila("Servicio",v.lavado)+(v.precio!=null?fila("Total","$"+v.precio,true):"")+fila("Atendió",v.resp)+'</div>';
+    if(v.calif > 0 || yaCalifico){
+      var est = v.calif > 0 ? '<div class="gracias"><div class="est">'+"★".repeat(v.calif)+"☆".repeat(5-v.calif)+'</div>Gracias por tu calificación</div>' : '<div class="gracias">¡Gracias por calificar!</div>';
+      return base + '<div class="califica">'+est+'</div>';
+    }
+    return base + '<div class="califica"><h3>¿Cómo quedó tu auto?</h3><div class="sub">Tu opinión nos ayuda a mejorar</div>'
+      + '<div class="estrellas" id="estrellas">'+[1,2,3,4,5].map(function(n){return '<span class="estrella" data-n="'+n+'">★</span>';}).join('')+'</div>'
+      + '<textarea class="coment" id="coment" placeholder="Comentario (opcional)"></textarea>'
+      + '<button class="btn" id="btnCal" disabled>Enviar calificación</button></div>';
+  }
+
+  function engancharEstrellas(){
+    var cont = document.getElementById("estrellas");
+    if(!cont) return;
+    cont.querySelectorAll(".estrella").forEach(function(e){
+      e.addEventListener("click", function(){
+        estrellaSel = Number(e.dataset.n);
+        cont.querySelectorAll(".estrella").forEach(function(x){ x.classList.toggle("on", Number(x.dataset.n) <= estrellaSel); });
+        document.getElementById("btnCal").disabled = false;
+      });
     });
-    document.getElementById("btnCalif").disabled = false;
+    var btn = document.getElementById("btnCal");
+    if(btn) btn.addEventListener("click", enviarCalif);
   }
 
   async function enviarCalif(){
     if(estrellaSel < 1) return;
-    document.getElementById("btnCalif").disabled = true;
+    var btn = document.getElementById("btnCal");
+    btn.disabled = true; btn.textContent = "Enviando…";
     try{
       var r = await fetch("/api/seguimiento/"+encodeURIComponent(CODIGO)+"/calificar",{
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({estrellas:estrellaSel, comentario:(document.getElementById("comentario").value||"")})
+        body: JSON.stringify({estrellas:estrellaSel, comentario:(document.getElementById("coment").value||"")})
       });
       var d = await r.json();
       if(d.ok){ yaCalifico = true; cargar(); }
-      else { document.getElementById("btnCalif").disabled = false; }
-    }catch(e){ document.getElementById("btnCalif").disabled = false; }
+      else { btn.disabled=false; btn.textContent="Enviar calificación"; }
+    }catch(e){ btn.disabled=false; btn.textContent="Enviar calificación"; }
   }
 
   cargar();
-  setInterval(cargar, 10000);  // refresca cada 10 s
+  setInterval(cargar, 10000);
 </script>
 </body>
 </html>
