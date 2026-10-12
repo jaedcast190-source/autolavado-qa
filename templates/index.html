@@ -879,8 +879,17 @@
       mostrarToast("Fase: " + fases[v.faseActual].nombre);
     } else {
       // Última fase -> terminar el servicio.
-      cambiarEstado(i);
+      terminarServicio(i);
     }
+  }
+
+  // Termina el servicio (En proceso -> Listo) en cualquier fase.
+  function terminarServicio(i){
+    var v = vehiculos[i];
+    if(!v || !asignadoTecnico(v) || v.estado !== "En proceso") return;
+    if(v.pausaInicio){ mostrarToast("Reanuda el servicio antes de terminarlo."); return; }
+    cambiarEstado(i);  // En proceso -> Listo
+    renderTecnico();
   }
 
   function asignacionCompatible(v){
@@ -1107,12 +1116,26 @@
         + '<div class="sem"></div></div>';
     }
 
-    // Avance por fase
-    var bloqueFase = "", botonAccion = "";
-    if(activo && !pausado){
+    // Avance por fase + botones de acción
+    var bloqueFase = "", botonAccion = "", secundarios = "";
+
+    if(espera){
+      // Auto en espera: iniciar (o avisar que falta confirmar llegada)
+      botonAccion = v.presente
+        ? '<button class="btn-gigante principal" onclick="accionTrabajo('+i+',&quot;iniciar&quot;)">▶ Iniciar lavado</button>'
+        : '<p class="tec-warning">Recepción debe confirmar la llegada del auto.</p>';
+
+    } else if(pausado){
+      // Auto pausado: reanudar
+      botonAccion = '<button class="btn-gigante principal" onclick="accionTrabajo('+i+',&quot;reanudar&quot;)">Reanudar lavado</button>';
+
+    } else if(activo){
+      // Auto en proceso: mostrar fases (si hay) y SIEMPRE un botón de terminar.
       var f = faseDe(v);
-      if(f){
-        var esUltima = f.indice >= f.total - 1;
+      var hayFases = f && f.total > 0;
+      var esUltima = hayFases ? (f.indice >= f.total - 1) : true;
+
+      if(hayFases){
         var chips = fasesActivas().map(function(fa,k){
           var clase = k < f.indice ? "fase-chip hecha" : (k === f.indice ? "fase-chip actual" : "fase-chip");
           return '<span class="'+clase+'">'+escaparHTML(fa.nombre)+'</span>';
@@ -1121,24 +1144,24 @@
         bloqueFase = '<div class="fase-wrap"><div class="fase-actual-txt">Fase '+(f.indice+1)+' de '+f.total+'<b>'+escaparHTML(f.nombre)+'</b></div>'
           + '<div class="fase-barra"><div class="fase-barra-fill" style="width:'+pct+'%"></div></div>'
           + '<div class="fase-chips">'+chips+'</div></div>';
-        botonAccion = esUltima
-          ? '<button class="btn-gigante terminar" onclick="avanzarFase('+i+')">Terminar lavado ✓</button>'
-          : '<button class="btn-gigante principal" onclick="avanzarFase('+i+')">Siguiente fase →</button>';
       }
-    } else if(espera){
-      botonAccion = v.presente
-        ? '<button class="btn-gigante principal" onclick="accionTrabajo('+i+',&quot;iniciar&quot;)">▶ Iniciar lavado</button>'
-        : '<p class="tec-warning">Recepción debe confirmar la llegada del auto.</p>';
-    } else if(pausado){
-      botonAccion = '<button class="btn-gigante principal" onclick="accionTrabajo('+i+',&quot;reanudar&quot;)">Reanudar lavado</button>';
-    } else {
-      botonAccion = '<p class="tec-warning">Trabajo terminado. Recepción realiza la entrega.</p>';
-    }
 
-    var secundarios = "";
-    if(activo){
-      secundarios = '<button class="btn-sec" onclick="abrirAccionTecnico('+i+',&quot;pausa&quot;)">⏸ Pausar</button>'
+      // Botón principal: avanzar fase si quedan; si es la última (o no hay fases), terminar.
+      if(hayFases && !esUltima){
+        botonAccion = '<button class="btn-gigante principal" onclick="avanzarFase('+i+')">Siguiente fase →</button>';
+        // Y SIEMPRE, además, un botón para terminar directo (por si quiere cerrar ya).
+        secundarios += '<button class="btn-sec" onclick="terminarServicio('+i+')">Terminar servicio ahora ✓</button>';
+      } else {
+        // Última fase o sin fases: el botón grande TERMINA el servicio.
+        botonAccion = '<button class="btn-gigante terminar" onclick="terminarServicio('+i+')">✓ Terminar servicio</button>';
+      }
+
+      secundarios += '<button class="btn-sec" onclick="abrirAccionTecnico('+i+',&quot;pausa&quot;)">⏸ Pausar</button>'
         + '<button class="btn-sec" onclick="abrirAccionTecnico('+i+',&quot;incidencia&quot;)">⚠ Reportar algo</button>';
+
+    } else {
+      // Listo u otro estado terminal
+      botonAccion = '<p class="tec-warning">Trabajo terminado. Recepción realiza la entrega.</p>';
     }
 
     var incidencias = (v.incidencias || []).map(function(n){return '<p class="tec-warning">'+escaparHTML(horaReal(n.fecha))+' · '+escaparHTML(n.motivo)+'</p>';}).join('');
