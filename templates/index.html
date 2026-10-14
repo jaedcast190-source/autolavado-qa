@@ -257,6 +257,31 @@
   #vistaRecepcion .card,#vistaRecepcion .metric{background:#101b2e;border-color:#29394f;color:#edf5ff;}
   #vistaRecepcion .card-h{border-color:#29394f;}#vistaRecepcion .metric .lbl,#vistaRecepcion .sub,#vistaRecepcion .sub2{color:#adc0d6;}
   .rec-kicker{font-size:11px;color:#26d8ef;letter-spacing:1.8px;font-weight:700;}.reception-card h2{font-size:22px;margin:5px 0;}.reception-card .card-h p,.rec-hint{font-size:13px;color:#a6b8ce;font-weight:400;line-height:1.6;}
+  .banner-edicion{background:#2a2410;border:1px solid #d4a84b;color:#ffe9b0;border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:14px;line-height:1.5;display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+  .banner-edicion b{color:#fff;}
+  .banner-edicion .btn{margin-left:auto;background:#d4a84b;color:#2a2000;border:none;font-weight:700;padding:7px 14px;}
+  .fotos-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .fotos-preview .foto-item{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid #34465f;}
+  .fotos-preview .foto-item img{width:100%;height:100%;object-fit:cover;}
+  .fotos-preview .foto-item button{position:absolute;top:2px;right:2px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(200,30,30,.92);color:#fff;font-weight:700;cursor:pointer;line-height:1;}
+  .foto-thumb{width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #34465f;cursor:pointer;}
+  .danos-zona{margin:6px 0;}
+  .danos-txt{color:#e7ad32;font-size:12px;font-weight:600;overflow-wrap:anywhere;}
+  .danos-fotos{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;}
+  .foto-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.9);align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px;cursor:pointer;}
+  .foto-overlay img{max-width:95%;max-height:85%;border-radius:10px;}
+  .foto-overlay .foto-cerrar{color:#cdd8e6;font-size:13px;}
+  .hist-resumen{display:flex;gap:10px;margin:8px 0 14px;}
+  .hist-kpi{flex:1;background:#f1f5fb;border-radius:10px;padding:10px;text-align:center;}
+  .hist-kpi b{display:block;font-size:18px;color:#0C447C;}
+  .hist-kpi span{font-size:11px;color:#64748b;}
+  .hist-lista{max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+  .hist-fila{border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;}
+  .hist-top{display:flex;justify-content:space-between;font-size:13px;}
+  .hist-top span{color:#64748b;font-size:12px;}
+  .hist-sub{font-size:12px;color:#475569;margin-top:2px;overflow-wrap:anywhere;}
+  .hist-det{font-size:12px;color:#b45309;margin-top:3px;overflow-wrap:anywhere;}
+  .hist-vacio{color:#64748b;font-size:13px;text-align:center;padding:10px;}
   .reception-card input,.reception-card select,.reception-card textarea{background:#1b2a40;border-color:#34465f;color:#f4f8ff;min-height:46px;font-size:16px;color-scheme:dark;}
   .reception-card input::placeholder,.reception-card textarea::placeholder{color:#9eb0c7;}.reception-card label{color:#c6d6e8;}
   .rec-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:12px;border-bottom:1px solid #29394f;}.rec-steps .btn{background:#19263a;border-color:#2c4057;color:#b6c7dc;padding:10px 2px;font-size:13px;min-height:44px;}.rec-steps .btn[aria-current="step"]{color:#38def1;border-color:#05bfd6;background:#0c3548;}
@@ -316,7 +341,11 @@
   <div class="grid">
 
     <section class="card reception-card">
-      <div class="card-h"><span class="rec-kicker">RECEPCIÓN</span><h2>Registrar vehículo</h2><p>Identifica el auto, elige su servicio y revisa el ingreso.</p></div>
+      <div class="card-h"><span class="rec-kicker">RECEPCIÓN</span><h2 id="recTitulo">Registrar vehículo</h2><p>Identifica el auto, elige su servicio y revisa el ingreso.</p></div>
+      <div id="bannerEdicion" class="banner-edicion" hidden>
+        ✎ Editando <b id="bannerEdicionFolio">—</b> · corrige los datos y guarda. El folio y el código QR no cambian.
+        <button class="btn" onclick="cancelarEdicion()">Cancelar edición</button>
+      </div>
       <nav class="rec-steps" aria-label="Pasos del ingreso">
         <button class="btn" id="pasoBtn0" onclick="pasoRecepcion(0)">1 Vehículo</button><button class="btn" id="pasoBtn1" onclick="pasoRecepcion(1)">2 Cliente</button><button class="btn" id="pasoBtn2" onclick="pasoRecepcion(2)">3 Servicio</button><button class="btn" id="pasoBtn3" onclick="pasoRecepcion(3)">4 Revisión</button>
       </nav>
@@ -347,6 +376,11 @@
           <div class="field"><label for="inSuciedad">Nivel de suciedad observado</label><select id="inSuciedad"><option value="">Sin evaluar</option><option>Bajo</option><option>Medio</option><option>Alto</option></select></div>
           <label class="rec-check"><input id="inPertenencias" type="checkbox"> Confirmé que el cliente conserva sus pertenencias de valor</label>
           <div class="field"><label for="inDanos">Daños preexistentes observados</label><textarea id="inDanos" rows="2" maxlength="500" placeholder="Ej. rayón en puerta derecha. Vacío significa sin registro."></textarea></div>
+          <div class="field">
+            <label for="inFotosDanos">Foto evidencia de daños (hasta 3)</label>
+            <input id="inFotosDanos" type="file" accept="image/*" capture="environment" multiple onchange="agregarFotosDanos(this)">
+            <div id="fotosDanosPreview" class="fotos-preview"></div>
+          </div>
           <div class="field"><label for="inNotas">Instrucciones para el técnico</label><textarea id="inNotas" rows="2" maxlength="500" placeholder="Ej. no usar aromatizante"></textarea></div>
           <div class="field"><label for="inPago">Método de pago previsto</label><select id="inPago"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option>Por definir</option></select></div>
           <p class="rec-hint">Registrar no inicia el trabajo ni realiza un cobro. Recepción confirma la llegada antes de iniciar.</p>
@@ -430,6 +464,19 @@
       <button class="btn" onclick="cerrarCal()">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarCalif()">Guardar calificación</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalHistorial" onclick="cerrarHistorial(event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Historial del cliente">
+    <div class="modal-h">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:20px;">👤</span>
+        <b style="font-size:15px;" id="histCliente">Historial del cliente</b>
+      </div>
+      <button class="modal-x" onclick="cerrarHistorial()">✕</button>
+    </div>
+    <div style="padding:4px 18px 18px;" id="histCuerpo"></div>
   </div>
 </div>
 
@@ -716,9 +763,13 @@
     return (v || "").toUpperCase().replace(/\s+/g,"").replace(/[^A-Z0-9-]/g,"");
   }
 
-  function placaActivaDuplicada(placa){
+  // Índice del vehículo que se está editando (null = alta nueva).
+  var editandoIndice = null;
+
+  function placaActivaDuplicada(placa, exceptoIndice){
     var p = normalizarPlaca(placa);
-    return vehiculos.some(function(v){
+    return vehiculos.some(function(v, idx){
+      if(exceptoIndice != null && idx === exceptoIndice) return false;  // ignora el propio al editar
       var vp = normalizarPlaca(v.placa || ((v.sub||"").split("·")[1]||""));
       return vp === p && v.estado !== "Entregado" && v.estado !== "Cancelado";
     });
@@ -778,6 +829,85 @@
   function detalleVehiculo(v){return [v.marca,v.modelo,v.color].filter(Boolean).join(' · ');}
   function inspeccionVehiculo(v){var d=v.inspeccionIngreso;if(!d) return '';return 'Suciedad: '+(d.suciedad || 'Sin evaluar')+' · Pertenencias con el cliente: '+(d.pertenenciasConfirmadas ? 'confirmado' : 'sin confirmar')+'\nDaños observados: '+(d.danos || 'Sin registro');}
 
+  // --- Historial de servicios por cliente (agrupa por nombre + teléfono) ---
+  function claveCliente(v){
+    var nombre = (v.nombre || "").trim().toLowerCase().replace(/\s+/g, " ");
+    var tel = (v.telefono || "").replace(/\D/g, "");
+    return nombre + "|" + tel;
+  }
+
+  function serviciosDelCliente(v){
+    var clave = claveCliente(v);
+    return vehiculos.filter(function(o){ return claveCliente(o) === clave; });
+  }
+
+  function abrirHistorial(i){
+    var v = vehiculos[i]; if(!v){ mostrarToast("Registro no encontrado."); return; }
+    var lista = serviciosDelCliente(v).slice().sort(function(a,b){
+      return String(b.creadoEn||"").localeCompare(String(a.creadoEn||""));
+    });
+    var total = lista.length;
+    var gastado = lista.reduce(function(s,o){ return s + (Number(o.precio)||0); }, 0);
+    var entregados = lista.filter(function(o){ return o.estado === "Entregado"; }).length;
+
+    document.getElementById("histCliente").textContent = v.nombre || "Cliente";
+    var filas = lista.map(function(o){
+      var fecha = (o.creadoEn || "").slice(0,10) || o.fechaCita || "—";
+      var insp = o.inspeccionIngreso || {};
+      var nFotos = (Array.isArray(insp.fotos) ? insp.fotos.length : 0);
+      var detalle = [insp.danos ? '⚠ '+escaparHTML(insp.danos) : '', nFotos ? '📷 '+nFotos+' foto(s)' : ''].filter(Boolean).join(' · ');
+      return '<div class="hist-fila">'
+        + '<div class="hist-top"><b>'+escaparHTML(o.folio||'—')+'</b><span>'+escaparHTML(fecha)+'</span></div>'
+        + '<div class="hist-sub">'+escaparHTML(o.lavado||'')+' · '+escaparHTML(o.sub||'')+' · $'+(Number(o.precio)||0)+' · '+escaparHTML(o.estado||'')+'</div>'
+        + (detalle ? '<div class="hist-det">'+detalle+'</div>' : '')
+        + '</div>';
+    }).join("");
+
+    document.getElementById("histCuerpo").innerHTML =
+        '<div class="hist-resumen">'
+      +   '<div class="hist-kpi"><b>'+total+'</b><span>servicios</span></div>'
+      +   '<div class="hist-kpi"><b>'+entregados+'</b><span>entregados</span></div>'
+      +   '<div class="hist-kpi"><b>$'+gastado+'</b><span>total gastado</span></div>'
+      + '</div>'
+      + '<div class="hist-lista">'+(filas || '<p class="hist-vacio">Sin servicios previos.</p>')+'</div>';
+
+    document.getElementById("modalHistorial").classList.add("show");
+  }
+
+  function cerrarHistorial(e){
+    if(e && e.target && e.target.id !== "modalHistorial" && e.type === "click") return;
+    document.getElementById("modalHistorial").classList.remove("show");
+  }
+
+  // Bloque de daños + miniaturas de foto en la tarjeta (solo si hay algo registrado).
+  function danosTarjeta(v, i){
+    var d = v.inspeccionIngreso || {};
+    var fotos = Array.isArray(d.fotos) ? d.fotos : [];
+    if(!d.danos && !fotos.length) return '';
+    var txt = d.danos ? '<div class="danos-txt">⚠ Daños: '+escaparHTML(d.danos)+'</div>' : '';
+    var minis = fotos.map(function(src, k){
+      return '<img class="foto-thumb" src="'+src+'" alt="Daño '+(k+1)+'" onclick="abrirFotoDanos('+i+','+k+')">';
+    }).join("");
+    return '<div class="danos-zona">'+txt+(minis?'<div class="danos-fotos">'+minis+'</div>':'')+'</div>';
+  }
+
+  // Muestra una foto de daños en grande dentro del modal de QR (reutiliza su overlay).
+  function abrirFotoDanos(i, k){
+    var v = vehiculos[i]; if(!v) return;
+    var fotos = (v.inspeccionIngreso || {}).fotos || [];
+    var src = fotos[k]; if(!src) return;
+    var ov = document.getElementById("fotoOverlay");
+    if(!ov){
+      ov = document.createElement("div");
+      ov.id = "fotoOverlay";
+      ov.className = "foto-overlay";
+      ov.onclick = function(){ ov.style.display = "none"; };
+      document.body.appendChild(ov);
+    }
+    ov.innerHTML = '<img src="'+src+'" alt="Daño"><span class="foto-cerrar">Toca para cerrar</span>';
+    ov.style.display = "flex";
+  }
+
   function validarCita(){
     var fecha = document.getElementById("inFecha");
     var hora = document.getElementById("inHora");
@@ -793,6 +923,153 @@
     return true;
   }
 
+  // --- Fotos de daños: se comprimen en el navegador a ~150KB base64 ---
+  var fotosDanosActuales = [];   // array de dataURL (jpeg comprimido)
+
+  // Comprime una imagen a un ancho máx. y calidad dada; devuelve dataURL por callback.
+  function comprimirImagen(file, maxAncho, calidad, cb){
+    try{
+      var lector = new FileReader();
+      lector.onload = function(e){
+        var img = new Image();
+        img.onload = function(){
+          var escala = Math.min(1, maxAncho / img.width);
+          var w = Math.round(img.width * escala), h = Math.round(img.height * escala);
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          try{ cb(canvas.toDataURL("image/jpeg", calidad)); }
+          catch(err){ mostrarToast("No se pudo procesar la imagen."); }
+        };
+        img.onerror = function(){ mostrarToast("Archivo de imagen no válido."); };
+        img.src = e.target.result;
+      };
+      lector.onerror = function(){ mostrarToast("No se pudo leer la foto."); };
+      lector.readAsDataURL(file);
+    }catch(err){ mostrarToast("No se pudo cargar la foto."); }
+  }
+
+  // Maneja la selección de archivos del input de fotos.
+  function agregarFotosDanos(input){
+    if(!input || !input.files) return;
+    var archivos = Array.prototype.slice.call(input.files);
+    archivos.forEach(function(file){
+      if(fotosDanosActuales.length >= 3){ mostrarToast("Máximo 3 fotos."); return; }
+      if(!/^image\//.test(file.type)){ mostrarToast("Solo imágenes."); return; }
+      comprimirImagen(file, 1000, 0.55, function(dataURL){
+        if(fotosDanosActuales.length >= 3) return;
+        fotosDanosActuales.push(dataURL);
+        pintarFotosDanos();
+      });
+    });
+    input.value = "";   // permite volver a elegir el mismo archivo
+  }
+
+  // Dibuja las miniaturas con botón de quitar.
+  function pintarFotosDanos(){
+    var cont = document.getElementById("fotosDanosPreview");
+    if(!cont) return;
+    cont.innerHTML = fotosDanosActuales.map(function(src, i){
+      return '<div class="foto-item"><img src="'+src+'" alt="Daño '+(i+1)+'"><button type="button" onclick="quitarFotoDanos('+i+')" aria-label="Quitar foto">×</button></div>';
+    }).join("");
+  }
+
+  function quitarFotoDanos(i){
+    fotosDanosActuales.splice(i, 1);
+    pintarFotosDanos();
+  }
+
+  // Carga los datos de un vehículo en el formulario de recepción para corregirlos.
+  // Solo admin y recepción (permiso "registrar"). Conserva folio y código.
+  function editarVehiculo(i){
+    if(!permiso("registrar")){ mostrarToast("Solo recepción o el administrador pueden editar."); return; }
+    var v = vehiculos[i];
+    if(!v){ mostrarToast("El registro no existe."); return; }
+    if(v.estado === "Entregado" || v.estado === "Cancelado"){ mostrarToast("No se puede editar un servicio ya "+v.estado.toLowerCase()+"."); return; }
+
+    editandoIndice = i;
+    cambiarVista("recepcion");
+
+    // Prefill de todos los campos
+    function set(id, val){ var el=document.getElementById(id); if(el) el.value = (val == null ? "" : val); }
+    set("inTipo", (v.sub || "").split("·")[0].trim() || "Auto");
+    set("inPlaca", v.placa);
+    set("inMarca", v.marca);
+    set("inModelo", v.modelo);
+    set("inColor", v.color);
+    set("inKm", v.km);
+    set("inNombre", v.nombre);
+    set("inTel", v.telefono);
+    var frec=document.getElementById("inFrec"); if(frec) frec.checked = !!v.frec;
+    set("inFecha", v.fechaCita);
+    set("inHora", v.horaCita === "—" ? "" : v.horaCita);
+    set("inPago", v.pago);
+    set("inNotas", v.notas);
+    var insp = v.inspeccionIngreso || {};
+    set("inDanos", insp.danos);
+    set("inSuciedad", insp.suciedad);
+    var pert=document.getElementById("inPertenencias"); if(pert) pert.checked = !!insp.pertenenciasConfirmadas;
+    fotosDanosActuales = Array.isArray(insp.fotos) ? insp.fotos.slice() : [];
+    pintarFotosDanos();
+
+    pintarServiciosRecepcion();
+    set("inLavado", v.lavado);
+    calcularPrecio();
+    actualizarRecursos();
+    pintarServiciosRecepcion();
+    // La bahía/responsable guardados pueden no estar en la lista filtrada (están ocupados
+    // por este mismo auto); los agregamos para poder conservarlos.
+    asegurarOpcion("inBahia", v.bahiaId, v.bahia);
+    asegurarOpcion("inResp", v.responsableId, v.resp);
+    set("inBahia", v.bahiaId);
+    set("inResp", v.responsableId);
+
+    // Banner y botón en modo edición
+    var banner=document.getElementById("bannerEdicion"); if(banner) banner.hidden=false;
+    var bf=document.getElementById("bannerEdicionFolio"); if(bf) bf.textContent = v.folio;
+    var titulo=document.getElementById("recTitulo"); if(titulo) titulo.textContent = "Editar vehículo";
+    var btn=document.getElementById("btnRegistrar"); if(btn) btn.textContent = "Guardar cambios";
+
+    pasoRecepcion(0);
+    var placa=document.getElementById("inPlaca"); if(placa) placa.focus();
+    mostrarToast("Editando "+v.folio+" · corrige y guarda.");
+  }
+
+  // Si un <select> no tiene la opción (id,texto), la agrega para poder seleccionarla.
+  function asegurarOpcion(selectId, valor, texto){
+    if(!valor) return;
+    var sel=document.getElementById(selectId); if(!sel) return;
+    var existe=Array.prototype.some.call(sel.options, function(o){return o.value === valor;});
+    if(!existe){
+      var opt=document.createElement("option");
+      opt.value=valor; opt.textContent=(texto || valor)+" (actual)";
+      sel.appendChild(opt);
+    }
+  }
+
+  // Sale del modo edición y restaura el formulario a "alta nueva".
+  function salirDeEdicion(){
+    editandoIndice = null;
+    var banner=document.getElementById("bannerEdicion"); if(banner) banner.hidden=true;
+    var titulo=document.getElementById("recTitulo"); if(titulo) titulo.textContent = "Registrar vehículo";
+    var btn=document.getElementById("btnRegistrar"); if(btn) btn.textContent = "Registrar entrada";
+    ["inPlaca","inMarca","inModelo","inColor","inKm","inNombre","inTel","inNotas"].forEach(function(id){var el=document.getElementById(id); if(el) el.value="";});
+    var frec=document.getElementById("inFrec"); if(frec) frec.checked=false;
+    var lav=document.getElementById("inLavado"); if(lav) lav.value="";
+    var tipo=document.getElementById("inTipo"); if(tipo) tipo.selectedIndex=0;
+    var dan=document.getElementById("inDanos"); if(dan) dan.value="";
+    fotosDanosActuales = []; pintarFotosDanos();
+    calcularPrecio();
+  }
+
+  // Cancela la edición sin guardar.
+  function cancelarEdicion(){
+    salirDeEdicion();
+    render();
+    mostrarToast("Edición cancelada.");
+  }
+
   async function registrarVehiculo(){
     if(registrando) return;
     var nombre = document.getElementById("inNombre");
@@ -806,7 +1083,7 @@
       nombre.classList.add("err"); document.getElementById("errNombre").style.display="block"; ok=false;
     } else limpiarError("inNombre");
 
-    if(placaNorm.length < 5 || placaActivaDuplicada(placaNorm)){
+    if(placaNorm.length < 5 || placaActivaDuplicada(placaNorm, editandoIndice)){
       placa.classList.add("err"); document.getElementById("errPlaca").style.display="block"; ok=false;
     } else limpiarError("inPlaca");
 
@@ -837,13 +1114,14 @@
     if(!validarCita()) return;
     var precio = validacion.precio;
     DURACION[lavado] = validacion.minutos;
-    folioNum++;
 
-    var codigoSeguimiento = (String(folioNum).padStart(4,"0") + Math.random().toString(36).slice(2,6)).toUpperCase();
-    vehiculos.push({
-      folio: "CW-" + String(folioNum).padStart(4,"0"),
-      codigo: codigoSeguimiento,
-      hora: ahora(),
+    var respId = document.getElementById("inResp").value;
+    var bahiaId = document.getElementById("inBahia").value;
+    var respNom = catalogoRecurso("personal")[respId]?.nombre || "";
+    var bahiaNom = catalogoRecurso("bahias")[bahiaId]?.nombre || "";
+
+    // Datos editables comunes (alta y edición comparten estos campos).
+    var datosComunes = {
       horaCita: document.getElementById("inHora").value || "—",
       fechaCita: document.getElementById("inFecha").value || fechaLocalISO(),
       entrega: calcularEntrega(),
@@ -856,25 +1134,79 @@
       marca: document.getElementById("inMarca").value.trim(),
       modelo: document.getElementById("inModelo").value.trim(),
       color: document.getElementById("inColor").value.trim(),
-      inspeccionIngreso: {suciedad:document.getElementById("inSuciedad").value,pertenenciasConfirmadas:document.getElementById("inPertenencias").checked,danos:document.getElementById("inDanos").value.trim(),fecha:new Date().toISOString()},
-      tarifaHistorica: precio,
       duracionMinutos: validacion.minutos,
-      presente: false,
-      responsableId: document.getElementById("inResp").value,
-      bahiaId: document.getElementById("inBahia").value,
-      resp: catalogoRecurso("personal")[document.getElementById("inResp").value]?.nombre || "",
-      bahia: catalogoRecurso("bahias")[document.getElementById("inBahia").value]?.nombre || "",
+      responsableId: respId,
+      bahiaId: bahiaId,
+      resp: respNom,
+      bahia: bahiaNom,
       pago: document.getElementById("inPago").value,
-      pagado: false,
-      cobros: [],
       frec: document.getElementById("inFrec").checked,
       km: document.getElementById("inKm").value.trim(),
       notas: document.getElementById("inNotas").value.trim(),
+    };
+
+    if(editandoIndice != null){
+      // --- EDICIÓN: se conserva folio, código, cobros e historial ---
+      var original = vehiculos[editandoIndice];
+      if(!original){ mostrarToast("El registro ya no existe."); salirDeEdicion(); return; }
+      // La bahía/responsable solo se pueden cambiar si el auto NO está en proceso
+      // (una bahía ocupada no se puede modificar en pleno lavado).
+      if(original.estado === "En proceso"){
+        if(bahiaId !== original.bahiaId || respId !== original.responsableId){
+          mostrarToast("No se puede cambiar bahía ni responsable mientras el auto está en proceso. Primero termina el servicio.");
+          return;
+        }
+      } else {
+        // En espera: la bahía/responsable nuevos no deben estar ocupados por OTRO auto en proceso.
+        var ocupado = vehiculos.some(function(o, idx){
+          if(idx === editandoIndice) return false;
+          if(o.estado !== "En proceso") return false;
+          return o.bahiaId === bahiaId || o.responsableId === respId;
+        });
+        if(ocupado){ mostrarToast("La bahía o el responsable elegidos están ocupados por otro servicio en proceso."); return; }
+      }
+
+      var copiaPrevia = JSON.parse(JSON.stringify(original));
+      Object.keys(datosComunes).forEach(function(k){ original[k] = datosComunes[k]; });
+      // Actualiza daños y fotos de la inspección de ingreso.
+      original.inspeccionIngreso = Object.assign({}, original.inspeccionIngreso || {}, {
+        danos: document.getElementById("inDanos").value.trim(),
+        fotos: fotosDanosActuales.slice(),
+        suciedad: document.getElementById("inSuciedad").value || (original.inspeccionIngreso||{}).suciedad || "",
+        pertenenciasConfirmadas: document.getElementById("inPertenencias").checked
+      });
+      original.tarifaHistorica = precio;              // la tarifa vigente se actualiza
+      original.editadoEn = new Date().toISOString();
+      original.historial = (original.historial || []).concat([{estado: original.estado, fecha: new Date().toISOString(), nota: "Datos corregidos en recepción"}]);
+
+      if(!guardarDatos()){
+        vehiculos[editandoIndice] = copiaPrevia;       // revertir si falla el guardado
+        return;
+      }
+      var folioEditado = original.folio;
+      salirDeEdicion();
+      render();
+      mostrarToast("Datos actualizados · " + folioEditado);
+      return;
+    }
+
+    // --- ALTA NUEVA ---
+    folioNum++;
+    var codigoSeguimiento = (String(folioNum).padStart(4,"0") + Math.random().toString(36).slice(2,6)).toUpperCase();
+    vehiculos.push(Object.assign({
+      folio: "CW-" + String(folioNum).padStart(4,"0"),
+      codigo: codigoSeguimiento,
+      hora: ahora(),
+      inspeccionIngreso: {suciedad:document.getElementById("inSuciedad").value,pertenenciasConfirmadas:document.getElementById("inPertenencias").checked,danos:document.getElementById("inDanos").value.trim(),fotos:fotosDanosActuales.slice(),fecha:new Date().toISOString()},
+      tarifaHistorica: precio,
+      presente: false,
+      pagado: false,
+      cobros: [],
       estado: "Espera",
       calif: 0,
       creadoEn: new Date().toISOString(),
       historial: [{estado:"Espera", fecha:new Date().toISOString()}]
-    });
+    }, datosComunes));
 
     if(!guardarDatos()){
       vehiculos.pop();
@@ -883,7 +1215,7 @@
     }
 
     nombre.value = ""; placa.value = ""; tel.value = "";
-    ["inMarca","inModelo","inColor","inDanos","inSuciedad"].forEach(function(id){document.getElementById(id).value="";});document.getElementById("inPertenencias").checked=false;pasoRecepcion(0);
+    ["inMarca","inModelo","inColor","inDanos","inSuciedad"].forEach(function(id){document.getElementById(id).value="";});document.getElementById("inPertenencias").checked=false;fotosDanosActuales=[];pintarFotosDanos();pasoRecepcion(0);
     document.getElementById("inNotas").value = "";
     document.getElementById("inLavado").value = "";
     document.getElementById("inTipo").selectedIndex = 0;
@@ -1466,6 +1798,7 @@
         + '<div class="qi-time">'+escaparHTML(v.horaCita)+'<div class="folio">'+folioSeguro+'</div></div>'
         + '<div class="qi-main"><div class="name">'+nombreSeguro+'</div>'
         + '<div class="rec-vehicle">'+escaparHTML(detalleVehiculo(v))+'</div>'
+        + danosTarjeta(v, i)
         + '<div class="sub">'+subSeguro+' · $'+Number(v.precio || 0)+(v.frec?' ★':'')+'</div>'
         + '<div class="sub2">'+bahiaSegura+' · '+respSeguro+' · entrega estimada '+escaparHTML(v.entrega)+'</div><div class="sub2">'+escaparHTML(tiempos)+'</div>'+sugerencia+(v.pausaInicio ? '<p class="tec-warning">Pausado: '+escaparHTML(v.motivoPausa)+'</p>' : '')+(v.incidencias || []).map(function(n){return '<p class="tec-warning">Incidencia: '+escaparHTML(n.motivo)+'</p>';}).join('')+'</div>'
         + '<div class="qi-right">'
@@ -1474,6 +1807,8 @@
         + '<button class="state '+escaparHTML(STCLASS[v.estado])+'" '+(v.estado === "Entregado" ? 'disabled' : '')+' onclick="'+(v.estado === "Espera" && !v.presente ? 'marcarLlegada' : v.estado === 'Espera' ? 'iniciarServicio' : 'cambiarEstado')+'('+i+')">'+accion+'</button>'
         + '<div class="qi-meta">'+pagoTxt+' '+estrellas+'</div>'
         + (v.codigo ? '<div class="qi-meta"><button class="btn-calif" onclick="mostrarQR('+i+')">📱 Código QR cliente</button></div>' : '')
+        + (permiso("registrar") && v.estado !== "Entregado" && v.estado !== "Cancelado" ? '<div class="qi-meta"><button class="btn-calif" onclick="editarVehiculo('+i+')">✎ Editar datos</button></div>' : '')
+        + '<div class="qi-meta"><button class="btn-calif" onclick="abrirHistorial('+i+')">📊 Historial cliente</button></div>'
         + '</div></div>';
     }
   }
