@@ -34,6 +34,30 @@ entenderlo y mantenerlo alguien más.
 9. **Si hay dos caminos razonables,** muéstralos con pros y contras antes de elegir.
 10. **Define el éxito antes de empezar** (cómo sabremos que quedó bien) y no digas "listo" sin haberlo comprobado.
 
+## Entregas chicas y con evidencia (obligatorio)
+La IA genera mucho código muy rápido; nadie revisa bien 1,800 líneas de golpe. Por eso:
+1. **Una entrega = un flujo.** Cada entrega cubre un solo cambio o flujo y, como guía, menos de ~400 líneas
+   modificadas. Si el plan pasa de eso, divídelo en pasos numerados; cada paso se entrega y se prueba
+   por separado, y no empiezas el siguiente sin mi visto bueno.
+2. **Planear es diseñar, no solo listar pasos.** Si el cambio toca datos, esquema, roles, rutas o servicios
+   externos, el plan explica cómo encaja con lo que ya existe: qué tablas, rutas y pantallas afecta
+   y qué podría romperse.
+3. **Caso real, no caso perfecto.** Diseña para el uso real (celular, red lenta, usuario con prisa),
+   no para la demo. Nada de abstracciones ni opciones "por si acaso".
+4. **"Listo" solo con evidencia.** Toda entrega incluye:
+   - los comandos de verificación que corriste y su resultado real (no "debería pasar");
+   - el recorrido del flujo como usuario real, con el rol que corresponde, paso a paso
+     (con capturas si tienes navegador);
+   - cuáles de los casos del punto 5 probaste;
+   - **qué NO pudiste probar y por qué.** Mejor decirlo que dejarlo implícito.
+5. **Casos que siempre se prueban** en lo que toques:
+   - datos vacíos / primera vez que se usa;
+   - error de red o servidor caído: mensaje claro y sin perder lo capturado;
+   - doble clic en guardar: no duplica;
+   - usuario sin permiso: no ve ni modifica lo que no le toca;
+   - pantalla de celular;
+   - textos con acentos y ñ.
+
 ## Ahorro de tokens
 - Usa subagentes Haiku (`explorador`) para buscar, leer documentación, resumir y tareas repetitivas. El modelo principal solo para lógica de negocio, refactors y arquitectura.
 - Respuestas directas: sin saludos, preámbulos ni explicaciones repetidas.
@@ -47,6 +71,15 @@ python -m pytest -q tests
 ```
 Las pruebas usan SQLite temporal: nunca tocan la base real. Si cambias lógica de negocio, agrega o ajusta su prueba en `tests/test_app.py`.
 Prueba en navegador las pantallas tocadas (incluido celular): 0 errores en consola.
+
+## Flujos críticos (recorrido de humo)
+Después de cualquier cambio, recorre los que toque tu cambio:
+1. **Recepción** registra un vehículo → recibe folio y precio calculado en el servidor.
+2. **Técnico** lo ve en su cola (y solo la suya) y lo avanza por las fases hasta terminado.
+3. **Recepción** cobra → el corte de caja del día cuadra (ingresos − salidas).
+4. **Cliente** abre el QR de seguimiento, ve su estado (sin datos de otros) y califica.
+5. **Monitor de TV** refleja el cambio sin mostrar datos personales.
+6. **Dos dispositivos a la vez** (recepción y técnico): un cambio en uno no borra el del otro.
 
 ## Reglas de código
 - Nunca entregues fragmentos con "// resto igual": si muestras una función, que sea la función completa.
